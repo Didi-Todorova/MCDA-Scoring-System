@@ -10,22 +10,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
         {
         }
 
+        public DbSet<Alternative> Alternatives { get; set; }
+        public DbSet<AlternativeValue> AlternativeValues { get; set; }
         public DbSet<Criterion> Criteria { get; set; }
-        public DbSet<CriterionScope> CriterionScopes { get; set; }
-        public DbSet<CriterionInterval> CriterionIntervals { get; set; }
-        public DbSet<CriterionReferenceValue> CriterionReferenceValues { get; set; }
+        public DbSet<CriterionOption> CriterionOptions { get; set; }
+        public DbSet<Decision> Decisions { get; set; }
+        public DbSet<NumericalCriterionRule> NumericalCriterionRules { get; set; }
+        public DbSet<NumericRange> NumericRanges { get; set; }
+        public DbSet<User> Users { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<Criterion>()
-                .Property(c => c.Type)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<Criterion>()
-                .Property(c => c.RatingMethod)
-                .HasConversion<string>();
+            modelBuilder.Entity<Alternative>()
+                .
+            
+            base.OnModelCreating(modelBuilder);        
         }
     }
 }
