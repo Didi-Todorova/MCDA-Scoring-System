@@ -3,6 +3,7 @@
     public class CriterionOption
     {
         public int Id { get; set; }
+        public ICollection<AlternativeValue> AlternativeValues { get; set; } = new List<AlternativeValue>();
         public int CriterionId { get; set; }
         public Criterion Criterion { get; set; } = null!;
         public string Value { get; set; }

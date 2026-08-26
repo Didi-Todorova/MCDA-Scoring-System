@@ -10,8 +10,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         public User User { get; set; } = null!;
         public WeightingMethod WeightingMethod { get; set; }
         public string Name { get; set; }
-        public ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();
         public ICollection<Alternative> Alternatives { get; set; } = new List<Alternative>();
+        public ICollection<Criterion> Criteria { get; set; } = new List<Criterion>();
         public DateTime CreatedAt { get; set; }
     }
 }
