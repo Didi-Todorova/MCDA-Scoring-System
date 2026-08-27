@@ -9,9 +9,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         [Key]
         public int Id { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
-        public User User { get; set; } = null!;
+        //[Required]
+        //public int UserId { get; set; }
+        //public User User { get; set; } = null!;
 
         [Required]
         public WeightingMethod WeightingMethod { get; set; }

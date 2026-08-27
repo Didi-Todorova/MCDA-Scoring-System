@@ -72,11 +72,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .HasForeignKey(nr => nr.NumericalCriterionRuleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<User>()
-                .HasMany(u => u.Decisions)
-                .WithOne(d => d.User)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+            //modelBuilder.Entity<User>()
+            //    .HasMany(u => u.Decisions)
+            //    .WithOne(d => d.User)
+            //    .HasForeignKey(d => d.UserId)
+            //    .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<AlternativeValue>()
                 .HasIndex(av => new { av.AlternativeId, av.CriterionId })

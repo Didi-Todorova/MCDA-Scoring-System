@@ -16,6 +16,5 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         public Criterion Criterion { get; set; } = null!;   
         public decimal? NumericValue { get; set; }
         public int? CriterionOptionId { get; set; }
-        public CriterionOption CriterionOption { get; set; } = null!;
-    }
+        public CriterionOption? CriterionOption { get; set; }     }
 }

@@ -13,8 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="MCDA-Scoring-System.Api\Controllers\" />
     <Folder Include="MCDA-Scoring-System.Core\Contracts\" />
+    <Folder Include="MCDA-Scoring-System.Core\DTOs\User\" />
     <Folder Include="MCDA-Scoring-System.Core\Services\" />
+    <Folder Include="MCDA-Scoring-System.Infrastructure\Data\Configuration\" />
   </ItemGroup>
 
   <ItemGroup>

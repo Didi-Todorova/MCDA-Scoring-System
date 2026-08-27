@@ -10,7 +10,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         [Required]
         public int NumericalCriterionRuleId { get; set; }
         public NumericalCriterionRule NumericalCriterionRule { get; set; } = null!;
+        [Required]
         public decimal MinValue { get; set; }
+        [Required]
         public decimal MaxValue { get; set; }
     }
 }
