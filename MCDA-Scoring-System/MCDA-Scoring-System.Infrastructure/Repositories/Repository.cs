@@ -86,9 +86,12 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories
         /// <param name="id">Identificator of record to be deleted</param>
         public async Task DeleteAsync<T>(object id) where T : class
         {
-            T entity = await GetByIdAsync<T>(id);
+            var entity = await GetByIdAsync<T>(id);
 
-            Delete<T>(entity);
+            if (entity != null)
+            {
+                Delete(entity);
+            }
         }
 
         /// <summary>
