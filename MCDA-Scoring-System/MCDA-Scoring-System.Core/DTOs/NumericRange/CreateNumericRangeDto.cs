@@ -3,7 +3,7 @@
     public record CreateNumericRangeDto
     (
         int NumericalCriterionRuleId,
-        decimal Minimum,
-        decimal Maximum
+        decimal MinValue,
+        decimal MaxValue
     );
 }

@@ -2,7 +2,7 @@
 {
     public record UpdateCriterionOptionDto
     (
-        int Id,
+        int CriterionId,
         string Value,
         int Rank
     );

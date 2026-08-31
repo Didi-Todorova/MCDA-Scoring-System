@@ -4,7 +4,7 @@
     (
         int Id,
         int NumericalCriterionRuleId,
-        decimal Minimum,
-        decimal Maximum
+        decimal MinValue,
+        decimal MaxValue
     );
 }

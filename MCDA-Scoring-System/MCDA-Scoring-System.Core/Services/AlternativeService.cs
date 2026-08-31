@@ -3,6 +3,7 @@ using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Alternative;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
@@ -35,6 +36,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task DeleteAlternativeAsync(int id)
         {
+            var alternative = await repo.GetByIdAsync<Alternative>(id) ?? throw new ArgumentException($"Alternative with ID {id} not found.");
             await repo.DeleteAsync<Alternative>(id);
             await repo.SaveChangesAsync();
         }
@@ -64,9 +66,14 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public Task UpdateAlternativeAsync(int id, UpdateAlternativeDto updateAlternativeDto)
+        public async Task UpdateAlternativeAsync(int id, UpdateAlternativeDto updateAlternativeDto)
         {
-            throw new NotImplementedException();
+            var alternative = await repo.GetByIdAsync<Alternative>(id) ?? throw new ArgumentException($"Alternative with ID {id} not found");
+
+            alternative.Name = updateAlternativeDto.Name;
+            alternative.DecisionId = updateAlternativeDto.DecisionId;
+
+            await repo.SaveChangesAsync();
         }
     }
 }
