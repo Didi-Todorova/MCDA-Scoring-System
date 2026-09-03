@@ -1,6 +1,7 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Criterion;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities;
+using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Enums;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,17 +16,17 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             this.repo = repo;
         }
 
-        public async Task<CriterionDto> CreateCriterionAsync(CreateCriterionDto createCriterionDto)
+        public async Task<CriterionDto> CreateCriterionAsync(CreateCriterionDto dto)
         {
             var criterion = new Criterion
             {
-                DecisionId = createCriterionDto.DecisionId,
-                Name = createCriterionDto.Name,
-                CriterionType = createCriterionDto.CriterionType,
-                Weight = createCriterionDto.Weight
+                DecisionId = dto.DecisionId,
+                Name = dto.Name,
+                CriterionType = dto.CriterionType,
+                Weight = dto.Weight
             };
 
-            repo.AddAsync(criterion);
+            await repo.AddAsync(criterion);
             repo.SaveChangesAsync();
 
             return new CriterionDto
@@ -38,11 +39,16 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task DeleteCriterionAsync(int id)
+        public async Task<bool> DeleteCriterionAsync(int id)
         {
-            var criterion = await repo.GetByIdAsync<Criterion>(id) ?? throw new ArgumentException($"Criterion with ID {id} not found.");
+            var criterion = await repo.GetByIdAsync<Criterion>(id);
+            if(criterion == null)
+                return false;
+
             await repo.DeleteAsync<Criterion>(id);
             await repo.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<IEnumerable<CriterionDto>> GetAllCriteriaAsync()
@@ -73,14 +79,30 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateCriterionAsync(int id, UpdateCriterionDto updateCriterionDto)
+        public async Task PatchCriterionAsync(int id, PatchCriterionDto dto)
         {
             var criterion = await repo.GetByIdAsync<Criterion>(id) ?? throw new ArgumentException($"Criterion with ID {id} not found.");
 
-            criterion.DecisionId = updateCriterionDto.DecisionId;   
-            criterion.Name = updateCriterionDto.Name;
-            criterion.CriterionType = updateCriterionDto.CriterionType; 
-            criterion.Weight = updateCriterionDto.Weight;
+            if(dto.DecisionId.HasValue)
+                criterion.DecisionId = dto.DecisionId.Value;
+            if(dto.Name != null)
+                criterion.Name = dto.Name;
+            if(dto.CriterionType.HasValue)
+                criterion.CriterionType = dto.CriterionType.Value;
+            if(dto.Weight != null)
+                criterion.Weight = dto.Weight;
+
+            await repo.SaveChangesAsync();
+        }
+
+        public async Task UpdateCriterionAsync(int id, UpdateCriterionDto dto)
+        {
+            var criterion = await repo.GetByIdAsync<Criterion>(id) ?? throw new ArgumentException($"Criterion with ID {id} not found.");
+
+            criterion.DecisionId = dto.DecisionId;   
+            criterion.Name = dto.Name;
+            criterion.CriterionType = dto.CriterionType; 
+            criterion.Weight = dto.Weight;
 
             await repo.SaveChangesAsync();
         }

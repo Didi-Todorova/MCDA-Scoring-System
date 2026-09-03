@@ -8,24 +8,24 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
     public class NumericRangeService : INumericRangeService
     {
-        private readonly IRepository repo;
+        private readonly IRepository _repo;
 
-        public NumericRangeService(IRepository _repo)
+        public NumericRangeService(IRepository repo)
         {
-            repo = _repo;
+            this._repo = repo;
         }
 
-        public async Task<NumericRangeDto> CreateNumericRangeAsync(CreateNumericRangeDto createNumericRangeDto)
+        public async Task<NumericRangeDto> CreateNumericRangeAsync(CreateNumericRangeDto dto)
         {
             var numericRange = new NumericRange
             {
-                NumericalCriterionRuleId = createNumericRangeDto.NumericalCriterionRuleId,
-                MinValue = createNumericRangeDto.MinValue,
-                MaxValue = createNumericRangeDto.MaxValue,
+                NumericalCriterionRuleId = dto.NumericalCriterionRuleId,
+                MinValue = dto.MinValue,
+                MaxValue = dto.MaxValue,
             };
 
-            await repo.AddAsync<NumericRange>(numericRange);
-            await repo.SaveChangesAsync();
+            await _repo.AddAsync<NumericRange>(numericRange);
+            await _repo.SaveChangesAsync();
 
             return new NumericRangeDto(
                 numericRange.Id,
@@ -35,17 +35,21 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task DeleteNumericRangeAsync(int id)
+        public async Task<bool> DeleteNumericRangeAsync(int id)
         {
-            var numericRange = await repo.GetByIdAsync<NumericRange>(id) ?? throw new ArgumentException($"NumericRange with ID {id} not found.");
+            var numericRange = await _repo.GetByIdAsync<NumericRange>(id);
 
-            await repo.DeleteAsync<NumericRange>(numericRange);
-            await repo.SaveChangesAsync();
+            if (numericRange == null)
+                return false;
+
+            await _repo.DeleteAsync<NumericRange>(numericRange);
+            await _repo.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IEnumerable<NumericRangeDto>> GetAllNumericRangesAsync()
         {
-            return await repo.AllReadonly<NumericRange>()
+            return await _repo.AllReadonly<NumericRange>()
                 .Select(nr => new NumericRangeDto(
                     nr.Id,
                     nr.NumericalCriterionRuleId,
@@ -57,7 +61,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<NumericRangeDto?> GetNumericRangeByIdAsync(int id)
         {
-            return await repo.AllReadonly<NumericRange>()
+            return await _repo.AllReadonly<NumericRange>()
                 .Where(nr => nr.Id == id)
                 .Select(nr => new NumericRangeDto(
                     nr.Id,
@@ -68,15 +72,30 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateNumericRangeAsync(int id, UpdateNumericRangeDto updateNumericRangeDto)
+        public async Task PatchNumericRangeAsync(int id, PatchNumericRangeDto dto)
         {
-            var numericRange = await repo.GetByIdAsync<NumericRange>(id) ?? throw new ArgumentException($"NumericRange with ID {id} not found.");
+            var numericRange = await _repo.GetByIdAsync<NumericRange>(id) ?? throw new ArgumentException($"Numeric Range with ID {id} not found.");
 
-            numericRange.NumericalCriterionRuleId = updateNumericRangeDto.NumericalCriterionRuleId;
-            numericRange.MinValue = updateNumericRangeDto.MinValue;
-            numericRange.MaxValue = updateNumericRangeDto.MaxValue;
+            if (dto.NumericalCriterionRuleId.HasValue)
+                numericRange.NumericalCriterionRuleId = dto.NumericalCriterionRuleId.Value;
+            if(dto.MinValue.HasValue)
+                numericRange.MinValue = dto.MinValue.Value;
+            if (dto.MaxValue.HasValue)
+                numericRange.MaxValue = dto.MaxValue.Value;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
+
+        }
+
+        public async Task UpdateNumericRangeAsync(int id, UpdateNumericRangeDto dto)
+        {
+            var numericRange = await _repo.GetByIdAsync<NumericRange>(id) ?? throw new ArgumentException($"Numeric Range with ID {id} not found.");
+
+            numericRange.NumericalCriterionRuleId = dto.NumericalCriterionRuleId;
+            numericRange.MinValue = dto.MinValue;
+            numericRange.MaxValue = dto.MaxValue;
+
+            await _repo.SaveChangesAsync();
         }
     }
 }

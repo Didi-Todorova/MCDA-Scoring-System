@@ -4,7 +4,6 @@ using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -12,11 +11,9 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MCDA_Scoring_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260827125406_RemoveUserFromDecision")]
-    partial class RemoveUserFromDecision
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -49,11 +46,11 @@ namespace MCDA_Scoring_System.Migrations
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.AlternativeValue", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AlternativeId")
                         .HasColumnType("int");
@@ -65,9 +62,10 @@ namespace MCDA_Scoring_System.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("NumericValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.HasIndex("CriterionId");
 
@@ -98,6 +96,7 @@ namespace MCDA_Scoring_System.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Weight")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -170,9 +169,11 @@ namespace MCDA_Scoring_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("MaxValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MinValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("NumericalCriterionRuleId")
@@ -203,6 +204,7 @@ namespace MCDA_Scoring_System.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("TargetValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -263,13 +265,13 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Criterion", "Criterion")
                         .WithMany("AlternativeValues")
                         .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionOption", "CriterionOption")
                         .WithMany("AlternativeValues")
                         .HasForeignKey("CriterionOptionId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Alternative");
 

@@ -8,24 +8,24 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
     public class CriterionOptionService : ICriterionOptionService
     {
-        private readonly IRepository repo;
+        private readonly IRepository _repo;
 
         public CriterionOptionService(IRepository repo)
         {
-            this.repo = repo;
+            this._repo = repo;
         }
 
-        public async Task<CriterionOptionDto> CreateCriterionOptionAsync(CreateCriterionOptionDto createCriterionOptionDto)
+        public async Task<CriterionOptionDto> CreateCriterionOptionAsync(CreateCriterionOptionDto dto)
         {
             var criterionOption = new CriterionOption
             {
-                CriterionId = createCriterionOptionDto.CriterionId,
-                Value = createCriterionOptionDto.Value,
-                Rank = createCriterionOptionDto.Rank
+                CriterionId = dto.CriterionId,
+                Value = dto.Value,
+                Rank = dto.Rank
             };
 
-            await repo.AddAsync<CriterionOption>(criterionOption);
-            await repo.SaveChangesAsync();
+            await _repo.AddAsync<CriterionOption>(criterionOption);
+            await _repo.SaveChangesAsync();
 
             return new CriterionOptionDto(
                 criterionOption.Id,
@@ -35,16 +35,21 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task DeleteCriterionOptionAsync(int id)
+        public async Task<bool> DeleteCriterionOptionAsync(int id)
         {
-            var criterionOption = await repo.GetByIdAsync<CriterionOption>(id) ?? throw new ArgumentException($"CriterionOption with ID {id} not found.");
-            await repo.DeleteAsync<CriterionOption>(criterionOption);
-            await repo.SaveChangesAsync();
+            var criterionOption = await _repo.GetByIdAsync<CriterionOption>(id);
+
+            if (criterionOption == null)
+                return false;
+
+            await _repo.DeleteAsync<CriterionOption>(criterionOption);
+            await _repo.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IEnumerable<CriterionOptionDto>> GetAllCriterionOptionsAsync()
         {
-            return await repo.AllReadonly<CriterionOption>()
+            return await _repo.AllReadonly<CriterionOption>()
                 .Select(co => new CriterionOptionDto(
                     co.Id,
                     co.CriterionId,
@@ -56,7 +61,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<CriterionOptionDto?> GetCriterionOptionByIdAsync(int id)
         {
-            return await repo.AllReadonly<CriterionOption>()
+            return await _repo.AllReadonly<CriterionOption>()
                 .Where(co => co.Id == id)
                 .Select(co => new CriterionOptionDto(
                     co.Id,
@@ -67,15 +72,29 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateCriterionOptionAsync(int id, UpdateCriterionOptionDto updateCriterionOptionDto)
+        public async Task PatchCriterionOptionAsync(int id, PatchCriterionOptionDto dto)
         {
-            var criterionOption = await repo.GetByIdAsync<CriterionOption>(id) ?? throw new ArgumentException($"CriterionOption with ID {id} not found.");
+            var criterionOption = _repo.GetByIdAsync<CriterionOption>(id).Result ?? throw new ArgumentException($"Criterion Option with ID {id} not found.");
 
-            criterionOption.CriterionId = updateCriterionOptionDto.CriterionId;
-            criterionOption.Value = updateCriterionOptionDto.Value;
-            criterionOption.Rank = updateCriterionOptionDto.Rank;
+            if(dto.CriterionId.HasValue)
+                criterionOption.CriterionId = dto.CriterionId.Value;
+            if(dto.Value != null)
+                criterionOption.Value = dto.Value;
+            if(dto.Rank.HasValue && dto.Rank.Value > 0)
+                criterionOption.Rank = dto.Rank.Value;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
+        }
+
+        public async Task UpdateCriterionOptionAsync(int id, UpdateCriterionOptionDto dto)
+        {
+            var criterionOption = await _repo.GetByIdAsync<CriterionOption>(id) ?? throw new ArgumentException($"Criterio nOption with ID {id} not found.");
+
+            criterionOption.CriterionId = dto.CriterionId;
+            criterionOption.Value = dto.Value;
+            criterionOption.Rank = dto.Rank;
+
+            await _repo.SaveChangesAsync();
         }
     }
 }

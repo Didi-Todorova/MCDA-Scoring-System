@@ -10,6 +10,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         [Required]
         public int DecisionId { get; set; }
         public Decision Decision { get; set; } = null!;
+
         [Required]
         public string Name { get; set; }
         public ICollection<AlternativeValue> AlternativeValues { get; set; } = new List<AlternativeValue>();

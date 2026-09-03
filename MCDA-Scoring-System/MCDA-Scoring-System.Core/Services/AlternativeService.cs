@@ -10,22 +10,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
     public class AlternativeService : IAlternativeService
     {
 
-        private readonly IRepository repo;
+        private readonly IRepository _repo;
 
         public AlternativeService(IRepository repo)
         {
-            this.repo = repo;
+            this._repo = repo;
         }
-        public async Task<AlternativeDto> CreateAlternativeAsync(CreateAlternativeDto createAlternativeDto)
+        public async Task<AlternativeDto> CreateAlternativeAsync(CreateAlternativeDto dto)
         {
             var alternative = new Alternative
             {
-                Name = createAlternativeDto.Name,
-                DecisionId = createAlternativeDto.DecisionId
+                Name = dto.Name,
+                DecisionId = dto.DecisionId
             };
 
-            await repo.AddAsync(alternative);
-            await repo.SaveChangesAsync();
+            await _repo.AddAsync(alternative);
+            await _repo.SaveChangesAsync();
 
             return new AlternativeDto(
                 alternative.Id,
@@ -34,16 +34,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 );
         }
 
-        public async Task DeleteAlternativeAsync(int id)
+        public async Task<bool> DeleteAlternativeAsync(int id)
         {
-            var alternative = await repo.GetByIdAsync<Alternative>(id) ?? throw new ArgumentException($"Alternative with ID {id} not found.");
-            await repo.DeleteAsync<Alternative>(id);
-            await repo.SaveChangesAsync();
+            var alternative = await _repo.GetByIdAsync<Alternative>(id);
+
+            if (alternative == null)
+                return false;
+
+            await _repo.DeleteAsync<Alternative>(id);
+            await _repo.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<IEnumerable<AlternativeDto>> GetAllAlternativesAsync()
         {
-            return await repo
+            return await _repo
                 .AllReadonly<Alternative>()
                 .Select(a => new AlternativeDto(
                     a.Id,
@@ -55,7 +61,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<AlternativeDto?> GetAlternativeByIdAsync(int id)
         {
-            return await repo
+            return await _repo
                 .AllReadonly<Alternative>()
                 .Where(a => a.Id == id)
                 .Select(a => new AlternativeDto(
@@ -65,15 +71,26 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 ))
                 .FirstOrDefaultAsync();
         }
-
-        public async Task UpdateAlternativeAsync(int id, UpdateAlternativeDto updateAlternativeDto)
+        public async Task PatchAlternativeAsync(int id, PatchAlternativeDto dto)
         {
-            var alternative = await repo.GetByIdAsync<Alternative>(id) ?? throw new ArgumentException($"Alternative with ID {id} not found");
+            var alternative = await _repo.GetByIdAsync<Alternative>(id)
+                ?? throw new ArgumentException($"Alternative with ID {id} not found.");
 
-            alternative.Name = updateAlternativeDto.Name;
-            alternative.DecisionId = updateAlternativeDto.DecisionId;
+            if (dto.Name != null) alternative.Name = dto.Name;
+            if (dto.DecisionId.HasValue) alternative.DecisionId = dto.DecisionId.Value;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
         }
+
+        public async Task UpdateAlternativeAsync(int id, UpdateAlternativeDto dto)
+        {
+            var alternative = await _repo.GetByIdAsync<Alternative>(id) ?? throw new ArgumentException($"Alternative with ID {id} not found");
+
+            alternative.Name = dto.Name;
+            alternative.DecisionId = dto.DecisionId;
+
+            await _repo.SaveChangesAsync();
+        }
+
     }
 }

@@ -4,10 +4,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts
 {
     public interface ICriterionOptionService
     {
-        public Task<CriterionOptionDto> CreateCriterionOptionAsync(CreateCriterionOptionDto createCriterionOptionDto);
+        public Task<CriterionOptionDto> CreateCriterionOptionAsync(CreateCriterionOptionDto dto);
         public Task<CriterionOptionDto?> GetCriterionOptionByIdAsync(int id);
         public Task<IEnumerable<CriterionOptionDto>> GetAllCriterionOptionsAsync();
-        public Task UpdateCriterionOptionAsync(int id, UpdateCriterionOptionDto updateCriterionOptionDto);
-        public Task DeleteCriterionOptionAsync(int id);
+        public Task UpdateCriterionOptionAsync(int id, UpdateCriterionOptionDto dto);
+        public Task PatchCriterionOptionAsync(int id, PatchCriterionOptionDto dto);
+        public Task<bool> DeleteCriterionOptionAsync(int id);
     }
 }

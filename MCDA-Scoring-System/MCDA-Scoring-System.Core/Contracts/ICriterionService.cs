@@ -8,6 +8,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts
         public Task<CriterionDto?> GetCriterionByIdAsync(int id);
         public Task<IEnumerable<CriterionDto>> GetAllCriteriaAsync();
         public Task UpdateCriterionAsync(int id, UpdateCriterionDto updateCriterionDto);
-        public Task DeleteCriterionAsync(int id);
+        public Task PatchCriterionAsync(int id, PatchCriterionDto patchCriterionDto);
+        public Task<bool> DeleteCriterionAsync(int id);
     }
 }

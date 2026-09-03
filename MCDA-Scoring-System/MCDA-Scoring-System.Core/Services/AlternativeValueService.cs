@@ -10,11 +10,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
     public class AlternativeValueService : IAlternativeValueService
     {
-        private readonly IRepository repo;
+        private readonly IRepository _repo;
 
         public AlternativeValueService(IRepository _repo)
         {
-            repo = _repo;
+            this._repo = _repo;
         }
 
         public async Task<AlternativeValueDto> CreateAlternativeValueAsync(CreateAlternativeValueDto createAlternativeValueDto)
@@ -27,8 +27,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 CriterionOptionId = createAlternativeValueDto.CriterionOptionId
             };
 
-            await repo.AddAsync(alternativeValue);
-            await repo.SaveChangesAsync();
+            await _repo.AddAsync(alternativeValue);
+            await _repo.SaveChangesAsync();
 
             return new AlternativeValueDto(
                 alternativeValue.Id,
@@ -39,17 +39,21 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task DeleteAlternativeValueAsync(int id)
+        public async Task<bool> DeleteAlternativeValueAsync(int id)
         {
-            var alternativeValue = await repo.GetByIdAsync<AlternativeValue>(id) ?? throw new ArgumentException($"AlternativeValue with ID {id} not found.");  
+            var alternativeValue = await _repo.GetByIdAsync<AlternativeValue>(id);  
 
-            await repo.DeleteAsync<AlternativeValue>(alternativeValue);
-            await repo.SaveChangesAsync();
+            if( alternativeValue == null ) 
+                return false;
+
+            await _repo.DeleteAsync<AlternativeValue>(alternativeValue);
+            await _repo.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IEnumerable<AlternativeValueDto>> GetAllAlternativeValuesAsync()
         {
-          return await repo.AllReadonly<AlternativeValue>()
+          return await _repo.AllReadonly<AlternativeValue>()
                 .Select(av => new AlternativeValueDto(
                     av.Id,
                     av.AlternativeId,
@@ -62,7 +66,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<AlternativeValueDto?> GetAlternativeValueByIdAsync(int id)
         {
-            return await repo.AllReadonly<AlternativeValue>()
+            return await _repo.AllReadonly<AlternativeValue>()
                 .Where(av => av.Id == id)
                 .Select(av => new AlternativeValueDto(
                     av.Id,
@@ -74,16 +78,32 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateAlternativeValueAsync(int id, UpdateAlternativeValueDto updateAlternativeValueDto)
+        public async Task PatchAlternativeValueAsync(int id, PatchAlternativeValueDto dto)
         {
-            var alternativeValue = await repo.GetByIdAsync<AlternativeValue>(id) ?? throw new ArgumentException($"AlternativeValue with ID {id} not found.");
+            var alternativeValue = _repo.GetByIdAsync<AlternativeValue>(id).Result ?? throw new ArgumentException($"AlternativeValue with ID {id} not found.");
 
-            alternativeValue.AlternativeId = updateAlternativeValueDto.AlternativeId;
-            alternativeValue.CriterionId = updateAlternativeValueDto.CriterionId;
-            alternativeValue.NumericValue = updateAlternativeValueDto.NumericValue;
-            alternativeValue.CriterionOptionId = updateAlternativeValueDto.CriterionOptionId;
+            if(dto.AlternativeId.HasValue)
+                alternativeValue.AlternativeId = dto.AlternativeId.Value;
+            if (dto.CriterionId.HasValue)
+                alternativeValue.CriterionId = dto.CriterionId.Value;
+            if(dto.NumericValue.HasValue)
+                alternativeValue.NumericValue = dto.NumericValue.Value;
+            if(dto.CriterionOptionId.HasValue)
+                alternativeValue.CriterionOptionId = dto.CriterionOptionId.Value;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
+        }
+
+        public async Task UpdateAlternativeValueAsync(int id, UpdateAlternativeValueDto dto)
+        {
+            var alternativeValue = await _repo.GetByIdAsync<AlternativeValue>(id) ?? throw new ArgumentException($"AlternativeValue with ID {id} not found.");
+
+            alternativeValue.AlternativeId = dto.AlternativeId;
+            alternativeValue.CriterionId = dto.CriterionId;
+            alternativeValue.NumericValue = dto.NumericValue;
+            alternativeValue.CriterionOptionId = dto.CriterionOptionId;
+
+            await _repo.SaveChangesAsync();
         }
     }
 }

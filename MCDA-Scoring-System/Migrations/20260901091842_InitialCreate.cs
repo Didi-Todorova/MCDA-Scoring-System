@@ -33,10 +33,10 @@ namespace MCDA_Scoring_System.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
                     WeightingMethod = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -45,8 +45,7 @@ namespace MCDA_Scoring_System.Migrations
                         name: "FK_Decisions_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -78,7 +77,7 @@ namespace MCDA_Scoring_System.Migrations
                     DecisionId = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CriterionType = table.Column<int>(type: "int", nullable: false),
-                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    Weight = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -120,8 +119,8 @@ namespace MCDA_Scoring_System.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CriterionId = table.Column<int>(type: "int", nullable: false),
                     NumericType = table.Column<int>(type: "int", nullable: false),
-                    TargetValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Direction = table.Column<int>(type: "int", nullable: false)
+                    TargetValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    Direction = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -138,16 +137,16 @@ namespace MCDA_Scoring_System.Migrations
                 name: "AlternativeValues",
                 columns: table => new
                 {
-                    ID = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AlternativeId = table.Column<int>(type: "int", nullable: false),
                     CriterionId = table.Column<int>(type: "int", nullable: false),
-                    NumericValue = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
+                    NumericValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
                     CriterionOptionId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AlternativeValues", x => x.ID);
+                    table.PrimaryKey("PK_AlternativeValues", x => x.Id);
                     table.ForeignKey(
                         name: "FK_AlternativeValues_Alternatives_AlternativeId",
                         column: x => x.AlternativeId,
@@ -158,14 +157,12 @@ namespace MCDA_Scoring_System.Migrations
                         name: "FK_AlternativeValues_Criteria_CriterionId",
                         column: x => x.CriterionId,
                         principalTable: "Criteria",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AlternativeValues_CriterionOptions_CriterionOptionId",
                         column: x => x.CriterionOptionId,
                         principalTable: "CriterionOptions",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -175,8 +172,8 @@ namespace MCDA_Scoring_System.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NumericalCriterionRuleId = table.Column<int>(type: "int", nullable: false),
-                    MinValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    MaxValue = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    MinValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    MaxValue = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {

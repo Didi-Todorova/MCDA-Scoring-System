@@ -34,7 +34,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .HasMany(c => c.AlternativeValues)
                 .WithOne(av => av.Criterion)
                 .HasForeignKey(av => av.CriterionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Criterion>()
                 .HasMany(c => c.CriterionOptions)
@@ -52,7 +52,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .HasMany(co => co.AlternativeValues)
                 .WithOne(av => av.CriterionOption)
                 .HasForeignKey(av => av.CriterionOptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Decision>()
                 .HasMany(d => d.Criteria)
@@ -84,7 +84,27 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
 
             modelBuilder.Entity<CriterionOption>()
                 .HasIndex(co => new { co.CriterionId, co.Value })
-                .IsUnique();                 
+                .IsUnique();
+
+            modelBuilder.Entity<AlternativeValue>()
+            .Property(av => av.NumericValue)
+            .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Criterion>()
+                .Property(c => c.Weight)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<NumericRange>()
+                .Property(nr => nr.MinValue)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<NumericRange>()
+                .Property(nr => nr.MaxValue)
+                .HasPrecision(18, 2);
+
+            modelBuilder.Entity<NumericalCriterionRule>()
+                .Property(ncr => ncr.TargetValue)
+                .HasPrecision(18, 2);
         }
     }
 }

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MCDA_Scoring_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260827112626_InitialCreate")]
+    [Migration("20260901091842_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -49,11 +49,11 @@ namespace MCDA_Scoring_System.Migrations
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.AlternativeValue", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AlternativeId")
                         .HasColumnType("int");
@@ -65,9 +65,10 @@ namespace MCDA_Scoring_System.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("NumericValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
                     b.HasIndex("CriterionId");
 
@@ -97,7 +98,8 @@ namespace MCDA_Scoring_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("Weight")
+                    b.Property<decimal?>("Weight")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -148,7 +150,7 @@ namespace MCDA_Scoring_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.Property<int>("WeightingMethod")
@@ -170,9 +172,11 @@ namespace MCDA_Scoring_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("MaxValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("MinValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("NumericalCriterionRuleId")
@@ -196,13 +200,14 @@ namespace MCDA_Scoring_System.Migrations
                     b.Property<int>("CriterionId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Direction")
+                    b.Property<int?>("Direction")
                         .HasColumnType("int");
 
                     b.Property<int>("NumericType")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("TargetValue")
+                    b.Property<decimal?>("TargetValue")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -263,13 +268,13 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Criterion", "Criterion")
                         .WithMany("AlternativeValues")
                         .HasForeignKey("CriterionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionOption", "CriterionOption")
                         .WithMany("AlternativeValues")
                         .HasForeignKey("CriterionOptionId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Alternative");
 
@@ -302,13 +307,9 @@ namespace MCDA_Scoring_System.Migrations
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Decision", b =>
                 {
-                    b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.User", "User")
+                    b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.User", null)
                         .WithMany("Decisions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
+                        .HasForeignKey("UserId");
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.NumericRange", b =>

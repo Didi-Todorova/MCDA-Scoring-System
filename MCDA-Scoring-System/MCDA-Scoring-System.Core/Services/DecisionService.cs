@@ -9,23 +9,23 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
     public class DecisionService : IDecisionService
     {
-        private readonly IRepository repo;
+        private readonly IRepository _repo;
 
         public DecisionService(IRepository repo)
         {
-            this.repo = repo;
+            this._repo = repo;
         }
 
-        public async Task<DecisionDto> CreateDecisionAsync(CreateDecisionDto createDecisionDto)
+        public async Task<DecisionDto> CreateDecisionAsync(CreateDecisionDto dto)
         {
             var decision = new Decision
             {
-                Name = createDecisionDto.Name,
-                WeightingMethod = createDecisionDto.WeightingMethod,
+                Name = dto.Name,
+                WeightingMethod = dto.WeightingMethod,
             };
 
-            repo.AddAsync(decision);
-            repo.SaveChangesAsync();
+            await _repo.AddAsync(decision);
+            await _repo.SaveChangesAsync();
 
             return new DecisionDto(
                 decision.Id,
@@ -34,17 +34,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task DeleteDecisionAsync(int id)
+        public async Task<bool> DeleteDecisionAsync(int id)
         {
-            var decision = await repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
+            var decision = await _repo.GetByIdAsync<Decision>(id);
 
-            await repo.DeleteAsync<Decision>(id);
-            await repo.SaveChangesAsync();
+            if (decision is null)
+                return false;
+
+            await _repo.DeleteAsync<Decision>(id);
+            await _repo.SaveChangesAsync();
+
+            return true;
         }
 
         public async Task<IEnumerable<DecisionDto>> GetAllDecisionsAsync()
         {
-            return await repo.AllReadonly<Decision>()
+            return await _repo.AllReadonly<Decision>()
                 .Select(d => new DecisionDto(
                     d.Id,
                     d.Name,
@@ -55,7 +60,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<DecisionDto?> GetDecisionByIdAsync(int id)
         {
-            return await repo.AllReadonly<Decision>()
+            return await _repo.AllReadonly<Decision>()
                 .Where(d => d.Id == id)
                 .Select(d => new DecisionDto(
                     d.Id,
@@ -65,14 +70,26 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task UpdateDecisionAsync(int id, UpdateDecisionDto updateDecisionDto)
+        public async Task PartialUpdateDecisionAsync(int id, PatchDecisionDto dto)
         {
-            var decision = await repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
+            var decision = await _repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
 
-            decision.Name = updateDecisionDto.Name;
-            decision.WeightingMethod = updateDecisionDto.WeightingMethod;
+            if (dto.Name != null)
+                decision.Name = dto.Name;
+            if (dto.WeightingMethod != null)
+                decision.WeightingMethod = (WeightingMethod)dto.WeightingMethod;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
+        }
+
+        public async Task UpdateDecisionAsync(int id, UpdateDecisionDto dto)
+        {
+            var decision = await _repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
+
+            decision.Name = dto.Name;
+            decision.WeightingMethod = dto.WeightingMethod;
+
+            await _repo.SaveChangesAsync();
         }
     }
 }

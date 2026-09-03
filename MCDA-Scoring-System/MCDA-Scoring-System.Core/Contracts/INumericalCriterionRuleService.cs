@@ -4,10 +4,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts
 {
     public interface INumericalCriterionRuleService
     {
-        public Task<NumericalCriterionRuleDto> CreateNumericalCriterionRuleAsync(CreateNumericalCriterionRuleDto createNumericalCriterionRuleDto);
+        public Task<NumericalCriterionRuleDto> CreateNumericalCriterionRuleAsync(CreateNumericalCriterionRuleDto dto);
         public Task<NumericalCriterionRuleDto?> GetNumericalCriterionRuleByIdAsync(int id);
         public Task<IEnumerable<NumericalCriterionRuleDto>> GetAllNumericalCriterionRulesAsync();
-        public Task UpdateNumericalCriterionRuleAsync(int id, UpdateNumericalCriterionRuleDto updateNumericalCriterionRuleDto);
-        public Task DeleteNumericalCriterionRuleAsync(int id);
+        public Task UpdateNumericalCriterionRuleAsync(int id, UpdateNumericalCriterionRuleDto dto);
+        public Task PatchNumericalCriterionRuleAsync(int id, PatchNumericalCriterionRuleDto dto);
+        public Task<bool> DeleteNumericalCriterionRuleAsync(int id);
     }
 }

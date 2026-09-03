@@ -16,6 +16,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddApplicationServices();
 
+// Register ProblemDetails service
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,6 +26,9 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.MapGet("/", () => Results.Redirect("/swagger"))
+          .ExcludeFromDescription();
 }
 
 app.UseHttpsRedirection();
