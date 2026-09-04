@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
 {
-    public class NumericalCriterionRule
+    public class CriterionNumericalRule
     {
         [Key]
         public int Id { get; set; }
@@ -14,8 +14,15 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
 
         [Required]
         public NumericType NumericType { get; set; }
+
+        //Acceptrance scope for the criterion, if the value is outside of this scope, it will be considered as not accepted
+        [Required]
+        decimal minValue { get; set; } 
+        [Required]
+        decimal maxValue { get; set; }
+
         public decimal? TargetValue { get; set; } //for TargetValue
         public Direction? Direction { get; set; } // for scope
-        public ICollection<NumericRange> NumericRanges { get; set; } = new List<NumericRange>();
+        public ICollection<IntervalRange>? IntervalRanges { get; set; } = new List<IntervalRange>();
     }
 }

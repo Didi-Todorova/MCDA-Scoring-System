@@ -2,8 +2,9 @@
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericalCriterionRule
 {
-    public record UpdateNumericalCriterionRuleDto
+    public record CriterionNumericalRuleDto
     (
+        int Id,
         int CriterionId,
         NumericType NumericType,
         decimal? TargetValue,

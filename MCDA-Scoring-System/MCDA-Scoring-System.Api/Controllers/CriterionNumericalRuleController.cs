@@ -7,31 +7,31 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class NumericalCriterionRuleController : ControllerBase
+    public class CriterionNumericalRuleController : ControllerBase
     {
         private readonly INumericalCriterionRuleService _numericalCriterionRuleService;
 
-        public NumericalCriterionRuleController(INumericalCriterionRuleService numericalCriterionRuleService)
+        public CriterionNumericalRuleController(INumericalCriterionRuleService numericalCriterionRuleService)
         {
             _numericalCriterionRuleService = numericalCriterionRuleService;
         }
 
         [HttpPost]
-        public async Task<ActionResult<NumericalCriterionRuleDto>> Create([FromBody] CreateNumericalCriterionRuleDto dto)
+        public async Task<ActionResult<CriterionNumericalRuleDto>> Create([FromBody] CreateCriterionNumericalRuleDto dto)
         {
             var rule = await _numericalCriterionRuleService.CreateNumericalCriterionRuleAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = rule.Id }, rule);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<NumericalCriterionRuleDto>> GetById(int id)
+        public async Task<ActionResult<CriterionNumericalRuleDto>> GetById(int id)
         {
             var rule = await _numericalCriterionRuleService.GetNumericalCriterionRuleByIdAsync(id);
             return rule == null ? NotFound(new { Error = $"Numerical Criterion Rule with ID {id} not found" }) : Ok(rule);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateNumericalCriterionRuleDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateCriterionNumericalRuleDto dto)
         {
             try
             {
@@ -45,7 +45,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchNumericalCriterionRuleDto dto)
+        public async Task<IActionResult> Patch(int id, [FromBody] PatchCriterionNumericalDto dto)
         {
             try
             {

@@ -15,8 +15,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
         public DbSet<Criterion> Criteria { get; set; }
         public DbSet<CriterionOption> CriterionOptions { get; set; }
         public DbSet<Decision> Decisions { get; set; }
-        public DbSet<NumericalCriterionRule> NumericalCriterionRules { get; set; }
-        public DbSet<NumericRange> NumericRanges { get; set; }
+        public DbSet<CriterionNumericalRule> NumericalCriterionRules { get; set; }
+        public DbSet<IntervalRange> NumericRanges { get; set; }
         public DbSet<User> Users { get; set; }
 
 
@@ -43,9 +43,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Criterion>()
-                .HasMany(c => c.NumericalCriterionRules)
+                .HasOne(c => c.CriterionNumericalRule)
                 .WithOne(ncr => ncr.Criterion)
-                .HasForeignKey(ncr => ncr.CriterionId)
+                .HasForeignKey<CriterionNumericalRule>(ncr => ncr.CriterionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<CriterionOption>()
@@ -66,10 +66,10 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .HasForeignKey(a => a.DecisionId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<NumericalCriterionRule>()
-                .HasMany(ncr => ncr.NumericRanges)
-                .WithOne(nr => nr.NumericalCriterionRule)
-                .HasForeignKey(nr => nr.NumericalCriterionRuleId)
+            modelBuilder.Entity<CriterionNumericalRule>()
+                .HasMany(ncr => ncr.IntervalRanges)
+                .WithOne(nr => nr.CriterionNumericalRule)
+                .HasForeignKey(nr => nr.CriterionNumericalRuleId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             //modelBuilder.Entity<User>()
@@ -94,15 +94,15 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .Property(c => c.Weight)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<NumericRange>()
+            modelBuilder.Entity<IntervalRange>()
                 .Property(nr => nr.MinValue)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<NumericRange>()
+            modelBuilder.Entity<IntervalRange>()
                 .Property(nr => nr.MaxValue)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<NumericalCriterionRule>()
+            modelBuilder.Entity<CriterionNumericalRule>()
                 .Property(ncr => ncr.TargetValue)
                 .HasPrecision(18, 2);
         }

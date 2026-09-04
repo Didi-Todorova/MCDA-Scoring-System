@@ -21,6 +21,6 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         public decimal? Weight { get; set; }
         public ICollection<AlternativeValue> AlternativeValues { get; set; } = new List<AlternativeValue>();
         public ICollection<CriterionOption> CriterionOptions { get; set; } = new List<CriterionOption>();
-        public ICollection<NumericalCriterionRule> NumericalCriterionRules { get; set; } = new List<NumericalCriterionRule>();
+        public CriterionNumericalRule? CriterionNumericalRule { get; set; }
     }
 }

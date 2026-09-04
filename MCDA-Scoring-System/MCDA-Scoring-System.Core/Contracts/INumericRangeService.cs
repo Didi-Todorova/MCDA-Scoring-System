@@ -4,11 +4,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts
 {
     public interface INumericRangeService
     {
-        public Task<NumericRangeDto> CreateNumericRangeAsync(CreateNumericRangeDto dto);
-        public Task<NumericRangeDto?> GetNumericRangeByIdAsync(int id);
-        public Task<IEnumerable<NumericRangeDto>> GetAllNumericRangesAsync();
-        public Task UpdateNumericRangeAsync(int id, UpdateNumericRangeDto dto);
-        public Task PatchNumericRangeAsync(int id, PatchNumericRangeDto dto);
+        public Task<IntervalRangeDto> CreateNumericRangeAsync(CreateIntervalRangeDto dto);
+        public Task<IntervalRangeDto?> GetNumericRangeByIdAsync(int id);
+        public Task<IEnumerable<IntervalRangeDto>> GetAllNumericRangesAsync();
+        public Task UpdateNumericRangeAsync(int id, UpdateIntervalRangeDto dto);
+        public Task PatchNumericRangeAsync(int id, PatchIntervalRangeDto dto);
         public Task<bool> DeleteNumericRangeAsync(int id);
     }
 }

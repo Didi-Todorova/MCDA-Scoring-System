@@ -2,14 +2,14 @@
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
 {
-    public class NumericRange
+    public class IntervalRange
     {
         [Key]
         public int Id { get; set; }
 
         [Required]
-        public int NumericalCriterionRuleId { get; set; }
-        public NumericalCriterionRule NumericalCriterionRule { get; set; } = null!;
+        public int CriterionNumericalRuleId { get; set; }
+        public CriterionNumericalRule CriterionNumericalRule { get; set; } = null!;
         [Required]
         public decimal MinValue { get; set; }
         [Required]

@@ -17,14 +17,14 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<NumericRangeDto>> Create([FromBody] CreateNumericRangeDto dto)
+        public async Task<ActionResult<IntervalRangeDto>> Create([FromBody] CreateIntervalRangeDto dto)
         {
             var numericRange = await _numericRangeService.CreateNumericRangeAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = numericRange.Id }, numericRange);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<NumericRangeDto>> GetById(int id)
+        public async Task<ActionResult<IntervalRangeDto>> GetById(int id)
         {
             var numericRange = await _numericRangeService.GetNumericRangeByIdAsync(id);
             return numericRange == null ? NotFound(new { Error = $"Numeric Range with ID {id} not found" }) : Ok(numericRange);
@@ -38,7 +38,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateNumericRangeDto dto)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateIntervalRangeDto dto)
         {
             try
             {
@@ -52,7 +52,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchNumericRangeDto dto)
+        public async Task<IActionResult> Patch(int id, [FromBody] PatchIntervalRangeDto dto)
         {
             try
             {

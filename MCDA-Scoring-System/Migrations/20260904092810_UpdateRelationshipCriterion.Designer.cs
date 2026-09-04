@@ -4,6 +4,7 @@ using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MCDA_Scoring_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260904092810_UpdateRelationshipCriterion")]
+    partial class UpdateRelationshipCriterion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,16 +192,13 @@ namespace MCDA_Scoring_System.Migrations
                     b.ToTable("Decisions");
                 });
 
-            modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.IntervalRange", b =>
+            modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.NumericRange", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CriterionNumericalRuleId")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("MaxValue")
                         .HasPrecision(18, 2)
@@ -208,9 +208,12 @@ namespace MCDA_Scoring_System.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("NumericalCriterionRuleId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CriterionNumericalRuleId");
+                    b.HasIndex("NumericalCriterionRuleId");
 
                     b.ToTable("NumericRanges");
                 });
@@ -321,15 +324,15 @@ namespace MCDA_Scoring_System.Migrations
                         .HasForeignKey("UserId");
                 });
 
-            modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.IntervalRange", b =>
+            modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.NumericRange", b =>
                 {
-                    b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionNumericalRule", "CriterionNumericalRule")
-                        .WithMany("IntervalRanges")
-                        .HasForeignKey("CriterionNumericalRuleId")
+                    b.HasOne("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionNumericalRule", "NumericalCriterionRule")
+                        .WithMany("NumericRanges")
+                        .HasForeignKey("NumericalCriterionRuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("CriterionNumericalRule");
+                    b.Navigation("NumericalCriterionRule");
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Alternative", b =>
@@ -348,7 +351,7 @@ namespace MCDA_Scoring_System.Migrations
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionNumericalRule", b =>
                 {
-                    b.Navigation("IntervalRanges");
+                    b.Navigation("NumericRanges");
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionOption", b =>

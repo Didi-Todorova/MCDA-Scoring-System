@@ -1,8 +1,8 @@
 ﻿namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericRange
 {
-    public record PatchNumericRangeDto
+    public record PatchIntervalRangeDto
     (
-        int? NumericalCriterionRuleId,
+        int? CriterionNumericalRuleId,
         decimal? MinValue,
         decimal? MaxValue
     );

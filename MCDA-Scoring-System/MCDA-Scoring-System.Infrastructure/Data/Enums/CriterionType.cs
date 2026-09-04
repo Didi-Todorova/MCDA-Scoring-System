@@ -3,7 +3,6 @@
     public enum CriterionType
     {
         Numerical,
-        Categorical,
-        Ordinal
+        Categorical
     }
 }

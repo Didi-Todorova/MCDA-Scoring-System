@@ -1,9 +1,8 @@
 ﻿namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericRange
 {
-    public record NumericRangeDto
+    public record CreateIntervalRangeDto
     (
-        int Id,
-        int NumericalCriterionRuleId,
+        int CriterionNumericalRuleId,
         decimal MinValue,
         decimal MaxValue
     );
