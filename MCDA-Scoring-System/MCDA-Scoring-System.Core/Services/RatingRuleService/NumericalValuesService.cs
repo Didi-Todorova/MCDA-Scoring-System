@@ -19,6 +19,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
         public async Task<decimal> CalculateRatingAsync(int alternativeId, int criterionId)
         {
+            decimal rating = 0; 
+
             var alternativeValue = await _repo.AllReadonly<AlternativeValue>()
                 .Include(av => av.Alternative)
                 .Include(av => av.Criterion)
@@ -31,33 +33,49 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
             switch (alternativeValue.Criterion.CriterionType)
             {
                 case CriterionType.Numerical:
-                    ChooseNumericalRatingMethod(alternativeValue.Criterion.CriterionNumericalRule.NumericType, alternativeValue);
+                    rating = ChooseNumericalRatingMethod(alternativeValue.Criterion.CriterionNumericalRule.NumericType, alternativeValue);
                     break;
                 case CriterionType.Categorical:
                     // Handle categorical rating logic
                     break;
             }
+
+            return rating;
         }
 
-        private void ChooseNumericalRatingMethod(NumericType value, AlternativeValue alternativeValue)
+        private decimal ChooseNumericalRatingMethod(NumericType value, AlternativeValue alternativeValue)
         {
-            switch (value)
+             switch (value)
             {
                 case NumericType.Scope:
-                    CalculateRatingScope(alternativeValue.NumericValue, alternativeValue.Criterion.CriterionNumericalRule.NumericRange.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
+                    return CalculateRatingScope(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
                     break;
                 case NumericType.Interval:
-                    CalculateRatingInterval(alternativeValue.NumericValue, alternativeValue.Criterion.CriterionNumericalRule.IntervalNumber);
+                    CalculateRatingInterval(CheckIntervalAffiliation(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges, out int intervalPosition, out int intervalNumber), alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges.Count);
                     break;
                 case NumericType.TargetValue:
-                    CalculateRatingTargetValue(alternativeValue.NumericValue alternativeValue.Criterion.CriterionNumericalRule.TargetValue, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
+                    CalculateRatingTargetValue(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.TargetValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
         }
 
-        private decimal CalculateRatingTargetValue(int rawValue, int targetValue, int lowerBound, int upperBound)
+
+
+        private decimal CalculateRatingScope(decimal rawValue, decimal minValue, decimal maxValue)
+        {
+            decimal rating = 1 + (rawValue - minValue) * 4m / (maxValue - minValue);
+            return Math.Round(rating, 2);
+        }
+
+        private decimal CalculateRatingInterval(int intervalPosition, int intervalNumber)
+        {
+            decimal rating = 1 + (decimal)(intervalPosition - 1) * 4m / (intervalNumber - 1);
+            return Math.Round(rating, 2);
+        }
+
+        private decimal CalculateRatingTargetValue(decimal rawValue, decimal targetValue, decimal lowerBound, decimal upperBound)
         {
             decimal rating = 0;
 
@@ -73,18 +91,20 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
             return Math.Round(rating, 2);
         }
 
-        private decimal CalculateRatingInterval(int intervalPosition, int intervalNumber)
+        private int CheckIntervalAffiliation(decimal rawValue, ICollection<IntervalRange> intervalRanges, out int intervalPosition, out int intervalNumber)
         {
-            decimal rating = 1 + (decimal)(intervalPosition - 1) * 4m / (intervalNumber - 1);
-            return Math.Round(rating, 2);
+            var ranges = intervalRanges.ToList();
+            intervalPosition = 0;
+            intervalNumber = intervalRanges.Count;
+            for (int i = 0; i < ranges.Count; i++)
+            {
+                if (rawValue >= ranges[i].MinValue && rawValue <= ranges[i].MaxValue)
+                {
+                    intervalPosition = i + 1; // Position is 1-based
+                    break;
+                }
+            }
+            return intervalPosition;
         }
-
-        private decimal CalculateRatingScope(int rawValue, int minValue, int maxValue)
-        {
-            decimal rating = 1 + (rawValue - minValue) * 4m / (maxValue - minValue);
-            return Math.Round(rating, 2);
-        }
-
-
     }
 }
