@@ -105,6 +105,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
             modelBuilder.Entity<CriterionNumericalRule>()
                 .Property(ncr => ncr.TargetValue)
                 .HasPrecision(18, 2);
+
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }
 }

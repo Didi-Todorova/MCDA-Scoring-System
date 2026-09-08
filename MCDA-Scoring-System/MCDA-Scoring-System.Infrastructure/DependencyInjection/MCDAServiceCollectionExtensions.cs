@@ -1,5 +1,6 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjection
@@ -14,8 +15,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjec
             services.AddScoped<ICriterionService, CriterionService>();
             services.AddScoped<ICriterionOptionService, CriterionOptionService>();
             services.AddScoped<IDecisionService, DecisionService>();
-            services.AddScoped<INumericalCriterionRuleService, CriterionNumericalRuleService>();
-            services.AddScoped<INumericRangeService, IntervalRangeService>();
+            services.AddScoped<ICriterionNumericalRuleService, CriterionNumericalRuleService>();
+            services.AddScoped<IIntervalRangeService, IntervalRangeService>();
+            services.AddScoped<INumericValuesService, NumericalValuesService>();
 
             return services;
         }
