@@ -1,12 +1,12 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
-using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericRange;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.IntervalRange;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
-    public class IntervalRangeService : INumericRangeService
+    public class IntervalRangeService : IIntervalRangeService
     {
         private readonly IRepository _repo;
 
@@ -15,39 +15,39 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             this._repo = repo;
         }
 
-        public async Task<IntervalRangeDto> CreateNumericRangeAsync(CreateIntervalRangeDto dto)
+        public async Task<IntervalRangeDto> CreateIntervalRangeAsync(CreateIntervalRangeDto dto)
         {
-            var numericRange = new IntervalRange
+            var intervalRange = new IntervalRange
             {
                 CriterionNumericalRuleId = dto.CriterionNumericalRuleId,
                 MinValue = dto.MinValue,
                 MaxValue = dto.MaxValue,
             };
 
-            await _repo.AddAsync<IntervalRange>(numericRange);
+            await _repo.AddAsync<IntervalRange>(intervalRange);
             await _repo.SaveChangesAsync();
 
             return new IntervalRangeDto(
-                numericRange.Id,
-                numericRange.CriterionNumericalRuleId,
-                numericRange.MinValue,
-                numericRange.MaxValue
+                intervalRange.Id,
+                intervalRange.CriterionNumericalRuleId,
+                intervalRange.MinValue,
+                intervalRange.MaxValue
             );
         }
 
-        public async Task<bool> DeleteNumericRangeAsync(int id)
+        public async Task<bool> DeleteIntervalRangeAsync(int id)
         {
-            var numericRange = await _repo.GetByIdAsync<IntervalRange>(id);
+            var intervalRange = await _repo.GetByIdAsync<IntervalRange>(id);
 
-            if (numericRange == null)
+            if (intervalRange == null)
                 return false;
 
-            await _repo.DeleteAsync<IntervalRange>(numericRange);
+            await _repo.DeleteAsync<IntervalRange>(intervalRange);
             await _repo.SaveChangesAsync();
             return true;
         }
 
-        public async Task<IEnumerable<IntervalRangeDto>> GetAllNumericRangesAsync()
+        public async Task<IEnumerable<IntervalRangeDto>> GetAllIntervalRangesAsync()
         {
             return await _repo.AllReadonly<IntervalRange>()
                 .Select(nr => new IntervalRangeDto(
@@ -59,7 +59,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .ToListAsync();
         }
 
-        public async Task<IntervalRangeDto?> GetNumericRangeByIdAsync(int id)
+        public async Task<IntervalRangeDto?> GetIntervalRangeByIdAsync(int id)
         {
             return await _repo.AllReadonly<IntervalRange>()
                 .Where(nr => nr.Id == id)
@@ -72,7 +72,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task PatchNumericRangeAsync(int id, PatchIntervalRangeDto dto)
+        public async Task PatchIntervalRangeAsync(int id, PatchIntervalRangeDto dto)
         {
             var intervalRange = await _repo.GetByIdAsync<IntervalRange>(id) ?? throw new ArgumentException($"Interval Range with ID {id} not found.");
 
@@ -87,7 +87,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         }
 
-        public async Task UpdateNumericRangeAsync(int id, UpdateIntervalRangeDto dto)
+        public async Task UpdateIntervalRangeAsync(int id, UpdateIntervalRangeDto dto)
         {
             var intervalRange = await _repo.GetByIdAsync<IntervalRange>(id) ?? throw new ArgumentException($"Interval Range with ID {id} not found.");
 

@@ -6,14 +6,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService
 {
-    public class NumericalValuesService
+    public class NumericalValuesService : INumericValuesService
     {
         private readonly IAlternativeValueService _alternativeValueService;
         private readonly DbContext _dbContext;
         private readonly IRepository _repo;
 
-        public NumericalValuesService(IAlternativeValueService alternativeValueService)
+        public NumericalValuesService(IRepository repo, IAlternativeValueService alternativeValueService)
         {
+            _repo = repo;
             _alternativeValueService = alternativeValueService;
         }
 
@@ -29,6 +30,26 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                 .FirstOrDefaultAsync(
                 av => av.AlternativeId == alternativeId && av.CriterionId == criterionId);
 
+            if (alternativeValue == null)
+            {
+                throw new KeyNotFoundException(
+                    $"No value found for alternative {alternativeId} " +
+                    $"and criterion {criterionId}.");
+            }
+
+            if (alternativeValue.Criterion.CriterionType != CriterionType.Numerical)
+            {
+                throw new InvalidOperationException(
+                    $"Criterion {criterionId} is not numerical.");
+            }
+
+            var rule = alternativeValue.Criterion.CriterionNumericalRule;
+
+            if (rule == null)
+            {
+                throw new InvalidOperationException(
+                    $"No numerical rule exists for criterion {criterionId}.");
+            }
 
             switch (alternativeValue.Criterion.CriterionType)
             {
@@ -49,13 +70,13 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
             {
                 case NumericType.Scope:
                     return CalculateRatingScope(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
-                    break;
+                   
                 case NumericType.Interval:
-                    CalculateRatingInterval(CheckIntervalAffiliation(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges, out int intervalPosition, out int intervalNumber), alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges.Count);
-                    break;
+                    return CalculateRatingInterval(CheckIntervalAffiliation(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges, out int intervalPosition, out int intervalNumber), alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges.Count);
+                    
                 case NumericType.TargetValue:
-                    CalculateRatingTargetValue(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.TargetValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
-                    break;
+                   return CalculateRatingTargetValue(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.TargetValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
+                   
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }

@@ -1,5 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
-using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericalCriterionRule;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionNumericalRule;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,9 +9,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     [ApiController]
     public class CriterionNumericalRuleController : ControllerBase
     {
-        private readonly INumericalCriterionRuleService _numericalCriterionRuleService;
+        private readonly ICriterionNumericalRuleService _numericalCriterionRuleService;
 
-        public CriterionNumericalRuleController(INumericalCriterionRuleService numericalCriterionRuleService)
+        public CriterionNumericalRuleController(ICriterionNumericalRuleService numericalCriterionRuleService)
         {
             _numericalCriterionRuleService = numericalCriterionRuleService;
         }
@@ -19,15 +19,15 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<CriterionNumericalRuleDto>> Create([FromBody] CreateCriterionNumericalRuleDto dto)
         {
-            var rule = await _numericalCriterionRuleService.CreateNumericalCriterionRuleAsync(dto);
+            var rule = await _numericalCriterionRuleService.CreateCriterionNumericalRuleAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = rule.Id }, rule);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<CriterionNumericalRuleDto>> GetById(int id)
         {
-            var rule = await _numericalCriterionRuleService.GetNumericalCriterionRuleByIdAsync(id);
-            return rule == null ? NotFound(new { Error = $"Numerical Criterion Rule with ID {id} not found" }) : Ok(rule);
+            var rule = await _numericalCriterionRuleService.GetCriterionNumericalRuleByIdAsync(id);
+            return rule == null ? NotFound(new { Error = $"Criterion Numerical Rule with ID {id} not found" }) : Ok(rule);
         }
 
         [HttpPut("{id}")]
@@ -35,7 +35,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         {
             try
             {
-                await _numericalCriterionRuleService.UpdateNumericalCriterionRuleAsync(id, dto);
+                await _numericalCriterionRuleService.UpdateCriterionNumericalRuleAsync(id, dto);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -49,7 +49,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         {
             try
             {
-                await _numericalCriterionRuleService.PatchNumericalCriterionRuleAsync(id, dto);
+                await _numericalCriterionRuleService.PatchCriterionNumericalRuleAsync(id, dto);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -61,8 +61,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _numericalCriterionRuleService.DeleteNumericalCriterionRuleAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Numerical Criterion Rule with ID {id} not found" });
+            var result = await _numericalCriterionRuleService.DeleteCriterionNumericalRuleAsync(id);
+            return result ? NoContent() : NotFound(new { Error = $"Criterion Numerical Rule with ID {id} not found" });
         }
     }
 }

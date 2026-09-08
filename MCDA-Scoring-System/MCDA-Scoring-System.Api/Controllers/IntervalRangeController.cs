@@ -1,5 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
-using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericRange;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.IntervalRange;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,11 +7,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class NumericRangeController : ControllerBase
+    public class IntervalRangeController : ControllerBase
     {
-        private readonly INumericRangeService _numericRangeService;
+        private readonly IIntervalRangeService _numericRangeService;
 
-        public NumericRangeController(INumericRangeService numericRangeService)
+        public IntervalRangeController(IIntervalRangeService numericRangeService)
         {
             _numericRangeService = numericRangeService;
         }
@@ -19,22 +19,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<IntervalRangeDto>> Create([FromBody] CreateIntervalRangeDto dto)
         {
-            var numericRange = await _numericRangeService.CreateNumericRangeAsync(dto);
+            var numericRange = await _numericRangeService.CreateIntervalRangeAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = numericRange.Id }, numericRange);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<IntervalRangeDto>> GetById(int id)
         {
-            var numericRange = await _numericRangeService.GetNumericRangeByIdAsync(id);
-            return numericRange == null ? NotFound(new { Error = $"Numeric Range with ID {id} not found" }) : Ok(numericRange);
+            var numericRange = await _numericRangeService.GetIntervalRangeByIdAsync(id);
+            return numericRange == null ? NotFound(new { Error = $"Interval Range with ID {id} not found" }) : Ok(numericRange);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var numericRanges = await _numericRangeService.GetAllNumericRangesAsync();
-            return numericRanges == null ? NotFound(new { Error = "No Numeric Ranges found" }) : Ok(numericRanges);
+            var numericRanges = await _numericRangeService.GetAllIntervalRangesAsync();
+            return numericRanges == null ? NotFound(new { Error = "No Interval Ranges found" }) : Ok(numericRanges);
         }
 
         [HttpPut("{id}")]
@@ -42,7 +42,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         {
             try
             {
-                await _numericRangeService.UpdateNumericRangeAsync(id, dto);
+                await _numericRangeService.UpdateIntervalRangeAsync(id, dto);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -56,7 +56,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         {
             try
             {
-                await _numericRangeService.PatchNumericRangeAsync(id, dto);
+                await _numericRangeService.PatchIntervalRangeAsync(id, dto);
                 return NoContent();
             }
             catch (ArgumentException ex)
@@ -68,8 +68,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _numericRangeService.DeleteNumericRangeAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Numeric Range with ID {id} not found" });
+            var result = await _numericRangeService.DeleteIntervalRangeAsync(id);
+            return result ? NoContent() : NotFound(new { Error = $"Interval Range with ID {id} not found" });
         }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
-using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.NumericalCriterionRule;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionNumericalRule;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
-    public class CriterionNumericalRuleService : INumericalCriterionRuleService
+    public class CriterionNumericalRuleService : ICriterionNumericalRuleService
     {
         private readonly IRepository _repo;
 
@@ -15,7 +15,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             this._repo = repo;
         }
 
-        public async Task<CriterionNumericalRuleDto> CreateNumericalCriterionRuleAsync(CreateCriterionNumericalRuleDto dto)
+        public async Task<CriterionNumericalRuleDto> CreateCriterionNumericalRuleAsync(CreateCriterionNumericalRuleDto dto)
         {
             var criterionNumericalRule = new CriterionNumericalRule
             {
@@ -37,7 +37,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             );
         }
 
-        public async Task<bool> DeleteNumericalCriterionRuleAsync(int id)
+        public async Task<bool> DeleteCriterionNumericalRuleAsync(int id)
         {
             var criterionNumericalRule = await _repo.GetByIdAsync<CriterionNumericalRule>(id);
 
@@ -49,7 +49,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             return true;
         }
 
-        public async Task<IEnumerable<CriterionNumericalRuleDto>> GetAllNumericalCriterionRulesAsync()
+        public async Task<IEnumerable<CriterionNumericalRuleDto>> GetAllCriterionNumericalRulesAsync()
         {
             return await _repo.All<CriterionNumericalRule>()
                 .Select(cnr => new CriterionNumericalRuleDto(
@@ -62,7 +62,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .ToListAsync();
         }
 
-        public async Task<CriterionNumericalRuleDto?> GetNumericalCriterionRuleByIdAsync(int id)
+        public async Task<CriterionNumericalRuleDto?> GetCriterionNumericalRuleByIdAsync(int id)
         {
             return await _repo.All<CriterionNumericalRule>()
                 .Where(ncr => ncr.Id == id)
@@ -76,7 +76,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task PatchNumericalCriterionRuleAsync(int id, PatchCriterionNumericalDto dto)
+        public async Task PatchCriterionNumericalRuleAsync(int id, PatchCriterionNumericalDto dto)
         {
             var criterionNumericalRule = await _repo.GetByIdAsync<CriterionNumericalRule>(id) ?? throw new ArgumentException($"Criterion Numerical Rule with ID {id} not found.");
 
@@ -92,14 +92,14 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateNumericalCriterionRuleAsync(int id, UpdateCriterionNumericalRuleDto dto)
+        public async Task UpdateCriterionNumericalRuleAsync(int id, UpdateCriterionNumericalRuleDto dto)
         {
-            var numericalCriterionRule = await _repo.GetByIdAsync<CriterionNumericalRule>(id) ?? throw new ArgumentException($"Numerical Criterion Rule with ID {id} not found.");
+            var criterionNumericalRule = await _repo.GetByIdAsync<CriterionNumericalRule>(id) ?? throw new ArgumentException($"Criterion Numerical Rule with ID {id} not found.");
 
-            numericalCriterionRule.CriterionId = dto.CriterionId;
-            numericalCriterionRule.NumericType = dto.NumericType;
-            numericalCriterionRule.TargetValue = dto.TargetValue;
-            numericalCriterionRule.Direction = dto.Direction;
+            criterionNumericalRule.CriterionId = dto.CriterionId;
+            criterionNumericalRule.NumericType = dto.NumericType;
+            criterionNumericalRule.TargetValue = dto.TargetValue;
+            criterionNumericalRule.Direction = dto.Direction;
 
             await _repo.SaveChangesAsync();
         }
