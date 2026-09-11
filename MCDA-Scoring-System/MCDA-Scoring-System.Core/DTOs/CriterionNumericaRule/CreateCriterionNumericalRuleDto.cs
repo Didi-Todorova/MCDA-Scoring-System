@@ -6,6 +6,8 @@ public record CreateCriterionNumericalRuleDto
 (
     int CriterionId,
     NumericType NumericType,
+    decimal MinValue,
+    decimal MaxValue,
     decimal? TargetValue,
     Direction? Direction
 );

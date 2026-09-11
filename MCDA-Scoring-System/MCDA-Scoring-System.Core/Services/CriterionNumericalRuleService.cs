@@ -32,6 +32,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 criterionNumericalRule.Id,
                 criterionNumericalRule.CriterionId,
                 criterionNumericalRule.NumericType,
+                criterionNumericalRule.MinValue,
+                criterionNumericalRule.MaxValue,
                 criterionNumericalRule.TargetValue,
                 criterionNumericalRule.Direction
             );
@@ -56,6 +58,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     cnr.Id,
                     cnr.CriterionId,
                     cnr.NumericType,
+                    cnr.MinValue,
+                    cnr.MaxValue,
                     cnr.TargetValue,
                     cnr.Direction
                 ))
@@ -70,6 +74,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     ncr.Id,
                     ncr.CriterionId,
                     ncr.NumericType,
+                    ncr.MinValue,
+                    ncr.MaxValue,
                     ncr.TargetValue,
                     ncr.Direction
                 ))

@@ -12,7 +12,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
             builder.HasData(
                 new Criterion
                 {
-                    Id = 2,
+                    Id = 1,
                     DecisionId = 1,
                     Name = "RAM",
                     CriterionType = CriterionType.Numerical,
@@ -21,7 +21,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
 
                 new Criterion
                 {
-                    Id = 4,
+                    Id = 2,
                     DecisionId = 1,
                     Name = "Brand",
                     CriterionType = CriterionType.Categorical,
@@ -30,7 +30,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
 
                 new Criterion
                 {
-                    Id = 5,
+                    Id = 3,
                     DecisionId = 1,
                     Name = "Performance",
                     CriterionType = CriterionType.Categorical,
@@ -39,7 +39,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
 
                 new Criterion
                 {
-                    Id = 1,
+                    Id = 4,
                     DecisionId = 1,
                     Name = "Price",
                     CriterionType = CriterionType.Numerical,
@@ -48,7 +48,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
 
                 new Criterion
                 {
-                    Id = 3,
+                    Id = 5,
                     DecisionId = 1,
                     Name = "Storage",
                     CriterionType = CriterionType.Numerical,

@@ -86,7 +86,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Configurat
                      Id = 10,
                      AlternativeId = 2,
                      CriterionId = 5,
-                     NumericValue = 15,
+                     NumericValue = 150m,
                      CriterionOptionId = null
                  }
 

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MCDA_Scoring_System.Migrations
 {
     /// <inheritdoc />
-    public partial class ConfigurationFilesSeedingData : Migration
+    public partial class Seeding : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -50,11 +50,11 @@ namespace MCDA_Scoring_System.Migrations
                 columns: new[] { "Id", "CriterionType", "DecisionId", "Name", "Weight" },
                 values: new object[,]
                 {
-                    { 1, 0, 1, "Price", 3.4m },
-                    { 2, 0, 1, "RAM", 2.1m },
-                    { 3, 0, 1, "Storage", 2.5m },
-                    { 4, 1, 1, "Brand", 1.0m },
-                    { 5, 1, 1, "Performance", 1.5m }
+                    { 1, 0, 1, "RAM", 2.1m },
+                    { 2, 1, 1, "Brand", 1.0m },
+                    { 3, 1, 1, "Performance", 1.5m },
+                    { 4, 0, 1, "Price", 3.4m },
+                    { 5, 0, 1, "Storage", 2.5m }
                 });
 
             migrationBuilder.InsertData(
@@ -67,7 +67,7 @@ namespace MCDA_Scoring_System.Migrations
                     { 5, 1, 5, null, 880m },
                     { 6, 2, 1, null, 44m },
                     { 9, 2, 4, null, 1050m },
-                    { 10, 2, 5, null, 15m }
+                    { 10, 2, 5, null, 150m }
                 });
 
             migrationBuilder.InsertData(

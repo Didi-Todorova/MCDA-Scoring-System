@@ -30,6 +30,13 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
             return rule == null ? NotFound(new { Error = $"Criterion Numerical Rule with ID {id} not found" }) : Ok(rule);
         }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<CriterionNumericalRuleDto>>> GetAll()
+        {
+            var rules = await _numericalCriterionRuleService.GetAllCriterionNumericalRulesAsync();
+            return Ok(rules);
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateCriterionNumericalRuleDto dto)
         {

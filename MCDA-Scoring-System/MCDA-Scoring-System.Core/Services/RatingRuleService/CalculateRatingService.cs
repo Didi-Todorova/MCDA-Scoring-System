@@ -6,27 +6,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService
 {
-    public class NumericalValuesService : INumericValuesService
+    public class CalculateRatingService : ICalculateRatingService
     {
-        private readonly IAlternativeValueService _alternativeValueService;
-        private readonly DbContext _dbContext;
         private readonly IRepository _repo;
 
-        public NumericalValuesService(IRepository repo, IAlternativeValueService alternativeValueService)
+        public CalculateRatingService(IRepository repo, IAlternativeValueService alternativeValueService)
         {
             _repo = repo;
-            _alternativeValueService = alternativeValueService;
         }
 
         public async Task<decimal> CalculateRatingAsync(int alternativeId, int criterionId)
         {
-            decimal rating = 0; 
+            decimal rating = 0;
 
             var alternativeValue = await _repo.AllReadonly<AlternativeValue>()
                 .Include(av => av.Alternative)
                 .Include(av => av.Criterion)
                 .ThenInclude(c => c.CriterionNumericalRule)
                 .ThenInclude(ncr => ncr.IntervalRanges)
+                .Include(av => av.Criterion)
+                .ThenInclude(c => c.CriterionOptions)
                 .FirstOrDefaultAsync(
                 av => av.AlternativeId == alternativeId && av.CriterionId == criterionId);
 
@@ -37,27 +36,13 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                     $"and criterion {criterionId}.");
             }
 
-            if (alternativeValue.Criterion.CriterionType != CriterionType.Numerical)
-            {
-                throw new InvalidOperationException(
-                    $"Criterion {criterionId} is not numerical.");
-            }
-
-            var rule = alternativeValue.Criterion.CriterionNumericalRule;
-
-            if (rule == null)
-            {
-                throw new InvalidOperationException(
-                    $"No numerical rule exists for criterion {criterionId}.");
-            }
-
             switch (alternativeValue.Criterion.CriterionType)
             {
                 case CriterionType.Numerical:
                     rating = ChooseNumericalRatingMethod(alternativeValue.Criterion.CriterionNumericalRule.NumericType, alternativeValue);
                     break;
                 case CriterionType.Categorical:
-                    // Handle categorical rating logic
+                    rating = CalculateRatingCategory(alternativeValue);
                     break;
             }
 
@@ -66,23 +51,21 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
         private decimal ChooseNumericalRatingMethod(NumericType value, AlternativeValue alternativeValue)
         {
-             switch (value)
+            switch (value)
             {
                 case NumericType.Scope:
                     return CalculateRatingScope(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
-                   
+
                 case NumericType.Interval:
                     return CalculateRatingInterval(CheckIntervalAffiliation(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges, out int intervalPosition, out int intervalNumber), alternativeValue.Criterion.CriterionNumericalRule.IntervalRanges.Count);
-                    
+
                 case NumericType.TargetValue:
-                   return CalculateRatingTargetValue(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.TargetValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
-                   
+                    return CalculateRatingTargetValue(alternativeValue.NumericValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.TargetValue!.Value, alternativeValue.Criterion.CriterionNumericalRule.MinValue, alternativeValue.Criterion.CriterionNumericalRule.MaxValue);
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(value), value, null);
             }
         }
-
-
 
         private decimal CalculateRatingScope(decimal rawValue, decimal minValue, decimal maxValue)
         {
@@ -126,6 +109,41 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                 }
             }
             return intervalPosition;
+        }
+
+        private decimal CalculateRatingCategory(AlternativeValue alternativeValue)
+        {
+            var options = alternativeValue.Criterion.CriterionOptions;
+
+            var selectedOption = options.FirstOrDefault(
+                co => co.Id == alternativeValue.CriterionOptionId);
+
+            if (selectedOption == null)
+            {
+                throw new InvalidOperationException(
+                    "Selected criterion option was not found.");
+            }
+
+            int rank = selectedOption.Rank;
+            int totalRanks = options.Count;
+
+            if (totalRanks < 2)
+            {
+                throw new InvalidOperationException(
+                    "At least two ranks are required.");
+            }
+
+            if (rank < 1 || rank > totalRanks)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(rank),
+                    "Rank must be between 1 and the total number of ranks.");
+            }
+
+            decimal rating =
+                5m - ((rank - 1) * 4m / (totalRanks - 1));
+
+            return Math.Round(rating, 2);
         }
     }
 }

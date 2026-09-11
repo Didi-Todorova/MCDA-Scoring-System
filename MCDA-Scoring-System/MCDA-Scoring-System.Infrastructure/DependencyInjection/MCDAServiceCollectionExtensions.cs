@@ -17,7 +17,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjec
             services.AddScoped<IDecisionService, DecisionService>();
             services.AddScoped<ICriterionNumericalRuleService, CriterionNumericalRuleService>();
             services.AddScoped<IIntervalRangeService, IntervalRangeService>();
-            services.AddScoped<INumericValuesService, NumericalValuesService>();
+            services.AddScoped<ICalculateRatingService, CalculateRatingService>();
 
             return services;
         }

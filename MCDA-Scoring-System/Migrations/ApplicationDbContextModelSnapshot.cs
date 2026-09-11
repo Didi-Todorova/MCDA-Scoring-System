@@ -159,7 +159,7 @@ namespace MCDA_Scoring_System.Migrations
                             Id = 10,
                             AlternativeId = 2,
                             CriterionId = 5,
-                            NumericValue = 15m
+                            NumericValue = 150m
                         });
                 });
 
@@ -194,7 +194,7 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 2,
+                            Id = 1,
                             CriterionType = 0,
                             DecisionId = 1,
                             Name = "RAM",
@@ -202,7 +202,7 @@ namespace MCDA_Scoring_System.Migrations
                         },
                         new
                         {
-                            Id = 4,
+                            Id = 2,
                             CriterionType = 1,
                             DecisionId = 1,
                             Name = "Brand",
@@ -210,7 +210,7 @@ namespace MCDA_Scoring_System.Migrations
                         },
                         new
                         {
-                            Id = 5,
+                            Id = 3,
                             CriterionType = 1,
                             DecisionId = 1,
                             Name = "Performance",
@@ -218,7 +218,7 @@ namespace MCDA_Scoring_System.Migrations
                         },
                         new
                         {
-                            Id = 1,
+                            Id = 4,
                             CriterionType = 0,
                             DecisionId = 1,
                             Name = "Price",
@@ -226,7 +226,7 @@ namespace MCDA_Scoring_System.Migrations
                         },
                         new
                         {
-                            Id = 3,
+                            Id = 5,
                             CriterionType = 0,
                             DecisionId = 1,
                             Name = "Storage",
