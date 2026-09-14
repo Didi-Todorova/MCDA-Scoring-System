@@ -1,16 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Decision;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Criterion.Weights;
 
 [Route("api/[controller]")]
 [ApiController]
 public class DecisionsController : ControllerBase
 {
     private readonly IDecisionService _decisionService;
+    private readonly IPercentageAllocationService _percentageAllocationService;
+    private readonly IDirectRankingService _directRankingService;
 
-    public DecisionsController(IDecisionService decisionService)
+    public DecisionsController(IDecisionService decisionService, IPercentageAllocationService percentageAllocationService, IDirectRankingService directRankingService)
     {
         _decisionService = decisionService;
+        _percentageAllocationService = percentageAllocationService;
+        _directRankingService = directRankingService;
     }
 
     [HttpPost]
@@ -53,9 +58,26 @@ public class DecisionsController : ControllerBase
     {
         var result = await _decisionService.DeleteDecisionAsync(id);
 
-        if(!result)
+        if (!result)
             return NotFound(new { Error = $"Decision with ID {id} not found" });
 
         return NoContent();
     }
+
+    [HttpPut("{id}/weight")]
+    public async Task<IActionResult> SetWeights(int id, [FromBody] List<CriterionPercentageAllocationDto> weights)
+    {
+        await _percentageAllocationService.SetWeightsAsync(id, weights);
+       
+        return NoContent();
+    }
+
+    [HttpPut("{id}/ranking")]
+    public async Task<IActionResult> SetWeights(int id, [FromBody] List<CriterionDirectRankingDto> rankings)
+    {
+        await _directRankingService.SetWeightsAsync(id, rankings);
+
+        return NoContent();
+    }
 }
+

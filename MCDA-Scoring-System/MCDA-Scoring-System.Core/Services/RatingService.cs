@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService
 {
-    public class CalculateRatingService : ICalculateRatingService
+    public class RatingService : IRatingService
     {
         private readonly IRepository _repo;
 
-        public CalculateRatingService(IRepository repo, IAlternativeValueService alternativeValueService)
+        public RatingService(IRepository repo, IAlternativeValueService alternativeValueService)
         {
             _repo = repo;
         }

@@ -9,10 +9,10 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     [Route("api/[controller]")]
     public class NumericalValuesController : ControllerBase
     {
-        private readonly ICalculateRatingService _numericalValuesService;
+        private readonly IRatingService _numericalValuesService;
 
         public NumericalValuesController(
-            ICalculateRatingService numericalValuesService)
+            IRatingService numericalValuesService)
         {
             _numericalValuesService = numericalValuesService;
         }

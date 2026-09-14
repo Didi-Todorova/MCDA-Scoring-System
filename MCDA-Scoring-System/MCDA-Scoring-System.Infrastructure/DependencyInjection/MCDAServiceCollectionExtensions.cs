@@ -1,6 +1,7 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService;
+using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.WeightingServices;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjection
@@ -17,7 +18,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjec
             services.AddScoped<IDecisionService, DecisionService>();
             services.AddScoped<ICriterionNumericalRuleService, CriterionNumericalRuleService>();
             services.AddScoped<IIntervalRangeService, IntervalRangeService>();
-            services.AddScoped<ICalculateRatingService, CalculateRatingService>();
+            services.AddScoped<IRatingService, RatingService>();
+            services.AddScoped<IPercentageAllocationService, PercentageAllocationService>();
+            services.AddScoped<IDirectRankingService, DirectRankingService>();
 
             return services;
         }
