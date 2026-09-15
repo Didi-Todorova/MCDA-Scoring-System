@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MCDA-Scoring-System.Infrastructure\Data\Configuration\**" />
+    <Content Remove="MCDA-Scoring-System.Infrastructure\Data\Configuration\**" />
+    <EmbeddedResource Remove="MCDA-Scoring-System.Infrastructure\Data\Configuration\**" />
+    <None Remove="MCDA-Scoring-System.Infrastructure\Data\Configuration\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="Properties\launchSettings.json" />
   </ItemGroup>
 

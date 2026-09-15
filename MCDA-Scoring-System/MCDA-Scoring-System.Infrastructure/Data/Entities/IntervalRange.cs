@@ -14,5 +14,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
         public decimal MinValue { get; set; }
         [Required]
         public decimal MaxValue { get; set; }
+
+        [Required]
+        public int Rank { get; set; }
     }
 }

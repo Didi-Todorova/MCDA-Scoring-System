@@ -42,20 +42,6 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasIndex("DecisionId");
 
                     b.ToTable("Alternatives");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            DecisionId = 1,
-                            Name = "Laptop A"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            DecisionId = 1,
-                            Name = "Laptop B"
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.AlternativeValue", b =>
@@ -89,78 +75,6 @@ namespace MCDA_Scoring_System.Migrations
                         .IsUnique();
 
                     b.ToTable("AlternativeValues");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            AlternativeId = 1,
-                            CriterionId = 1,
-                            NumericValue = 56m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            AlternativeId = 1,
-                            CriterionId = 2,
-                            CriterionOptionId = 1
-                        },
-                        new
-                        {
-                            Id = 3,
-                            AlternativeId = 1,
-                            CriterionId = 3,
-                            CriterionOptionId = 5
-                        },
-                        new
-                        {
-                            Id = 4,
-                            AlternativeId = 1,
-                            CriterionId = 4,
-                            NumericValue = 1100m
-                        },
-                        new
-                        {
-                            Id = 5,
-                            AlternativeId = 1,
-                            CriterionId = 5,
-                            NumericValue = 880m
-                        },
-                        new
-                        {
-                            Id = 6,
-                            AlternativeId = 2,
-                            CriterionId = 1,
-                            NumericValue = 44m
-                        },
-                        new
-                        {
-                            Id = 7,
-                            AlternativeId = 2,
-                            CriterionId = 2,
-                            CriterionOptionId = 3
-                        },
-                        new
-                        {
-                            Id = 8,
-                            AlternativeId = 2,
-                            CriterionId = 3,
-                            CriterionOptionId = 5
-                        },
-                        new
-                        {
-                            Id = 9,
-                            AlternativeId = 2,
-                            CriterionId = 4,
-                            NumericValue = 1050m
-                        },
-                        new
-                        {
-                            Id = 10,
-                            AlternativeId = 2,
-                            CriterionId = 5,
-                            NumericValue = 150m
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Criterion", b =>
@@ -190,48 +104,6 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasIndex("DecisionId");
 
                     b.ToTable("Criteria");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CriterionType = 0,
-                            DecisionId = 1,
-                            Name = "RAM",
-                            Weight = 2.1m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CriterionType = 1,
-                            DecisionId = 1,
-                            Name = "Brand",
-                            Weight = 1.0m
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CriterionType = 1,
-                            DecisionId = 1,
-                            Name = "Performance",
-                            Weight = 1.5m
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CriterionType = 0,
-                            DecisionId = 1,
-                            Name = "Price",
-                            Weight = 3.4m
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CriterionType = 0,
-                            DecisionId = 1,
-                            Name = "Storage",
-                            Weight = 2.5m
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionNumericalRule", b =>
@@ -267,34 +139,6 @@ namespace MCDA_Scoring_System.Migrations
                         .IsUnique();
 
                     b.ToTable("NumericalCriterionRules");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CriterionId = 1,
-                            MaxValue = 128m,
-                            MinValue = 16m,
-                            NumericType = 2,
-                            TargetValue = 64m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CriterionId = 4,
-                            Direction = 0,
-                            MaxValue = 1500m,
-                            MinValue = 750m,
-                            NumericType = 0
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CriterionId = 5,
-                            MaxValue = 1024m,
-                            MinValue = 32m,
-                            NumericType = 1
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.CriterionOption", b =>
@@ -321,50 +165,6 @@ namespace MCDA_Scoring_System.Migrations
                         .IsUnique();
 
                     b.ToTable("CriterionOptions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CriterionId = 2,
-                            Rank = 1,
-                            Value = "Lenovo"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CriterionId = 2,
-                            Rank = 2,
-                            Value = "HP"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CriterionId = 2,
-                            Rank = 3,
-                            Value = "Mac"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CriterionId = 3,
-                            Rank = 1,
-                            Value = "Excellent"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            CriterionId = 3,
-                            Rank = 2,
-                            Value = "Good"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            CriterionId = 3,
-                            Rank = 3,
-                            Value = "Poor"
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.Decision", b =>
@@ -393,22 +193,6 @@ namespace MCDA_Scoring_System.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Decisions");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 9, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Choose a Laptop",
-                            WeightingMethod = 1
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2026, 9, 8, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Name = "Choose a University",
-                            WeightingMethod = 0
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.IntervalRange", b =>
@@ -430,34 +214,14 @@ namespace MCDA_Scoring_System.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CriterionNumericalRuleId");
 
                     b.ToTable("NumericRanges");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CriterionNumericalRuleId = 3,
-                            MaxValue = 1000.0m,
-                            MinValue = 570m
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CriterionNumericalRuleId = 3,
-                            MaxValue = 560m,
-                            MinValue = 240m
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CriterionNumericalRuleId = 3,
-                            MaxValue = 239m,
-                            MinValue = 124m
-                        });
                 });
 
             modelBuilder.Entity("MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities.User", b =>

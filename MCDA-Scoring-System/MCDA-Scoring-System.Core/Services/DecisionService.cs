@@ -13,15 +13,23 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public DecisionService(IRepository repo)
         {
-            this._repo = repo;
+            _repo = repo;
         }
 
-        public async Task<DecisionDto> CreateDecisionAsync(CreateDecisionDto dto)
+        public async Task<DecisionDto> CreateDecisionAsync(
+            CreateDecisionDto dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            ValidateName(dto.Name);
+            ValidateWeightingMethod(dto.WeightingMethod);
+
             var decision = new Decision
             {
-                Name = dto.Name,
+                Name = dto.Name.Trim(),
                 WeightingMethod = dto.WeightingMethod,
+                CreatedAt = DateTime.UtcNow
             };
 
             await _repo.AddAsync(decision);
@@ -38,16 +46,17 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         {
             var decision = await _repo.GetByIdAsync<Decision>(id);
 
-            if (decision is null)
+            if (decision == null)
                 return false;
 
-            await _repo.DeleteAsync<Decision>(id);
+            _repo.Delete(decision);
             await _repo.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<IEnumerable<DecisionDto>> GetAllDecisionsAsync()
+        public async Task<IEnumerable<DecisionDto>>
+            GetAllDecisionsAsync()
         {
             return await _repo.AllReadonly<Decision>()
                 .Select(d => new DecisionDto(
@@ -58,7 +67,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .ToListAsync();
         }
 
-        public async Task<DecisionDto?> GetDecisionByIdAsync(int id)
+        public async Task<DecisionDto?>
+            GetDecisionByIdAsync(int id)
         {
             return await _repo.AllReadonly<Decision>()
                 .Where(d => d.Id == id)
@@ -70,26 +80,75 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task PartialUpdateDecisionAsync(int id, PatchDecisionDto dto)
+        public async Task PartialUpdateDecisionAsync(
+            int id,
+            PatchDecisionDto dto)
         {
-            var decision = await _repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            var decision = await _repo.GetByIdAsync<Decision>(id);
+
+            if (decision == null)
+                throw new KeyNotFoundException(
+                    $"Decision with ID {id} not found.");
 
             if (dto.Name != null)
-                decision.Name = dto.Name;
-            if (dto.WeightingMethod != null)
-                decision.WeightingMethod = (WeightingMethod)dto.WeightingMethod;
+            {
+                ValidateName(dto.Name);
+                decision.Name = dto.Name.Trim();
+            }
+
+            if (dto.WeightingMethod.HasValue)
+            {
+                ValidateWeightingMethod(dto.WeightingMethod.Value);
+
+                decision.WeightingMethod =
+                    (WeightingMethod)dto.WeightingMethod.Value;
+            }
 
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateDecisionAsync(int id, UpdateDecisionDto dto)
+        public async Task UpdateDecisionAsync(
+            int id,
+            UpdateDecisionDto dto)
         {
-            var decision = await _repo.GetByIdAsync<Decision>(id) ?? throw new ArgumentException($"Decision with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            decision.Name = dto.Name;
+            var decision = await _repo.GetByIdAsync<Decision>(id);
+
+            if (decision == null)
+                throw new KeyNotFoundException(
+                    $"Decision with ID {id} not found.");
+
+            ValidateName(dto.Name);
+            ValidateWeightingMethod(dto.WeightingMethod);
+
+            decision.Name = dto.Name.Trim();
             decision.WeightingMethod = dto.WeightingMethod;
 
             await _repo.SaveChangesAsync();
         }
+
+        private static void ValidateName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException(
+                    "Decision name is required.");
+        }
+
+        private static void ValidateWeightingMethod(
+            WeightingMethod weightingMethod)
+        {
+            if (!Enum.IsDefined(
+                    typeof(WeightingMethod),
+                    weightingMethod))
+            {
+                throw new ArgumentException(
+                    "Invalid weighting method.");
+            }
+        }    
     }
 }

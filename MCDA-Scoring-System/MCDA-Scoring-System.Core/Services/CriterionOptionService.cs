@@ -1,6 +1,7 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionOption;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities;
+using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Enums;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,44 +13,91 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public CriterionOptionService(IRepository repo)
         {
-            this._repo = repo;
+            _repo = repo;
         }
 
-        public async Task<CriterionOptionDto> CreateCriterionOptionAsync(CreateCriterionOptionDto dto)
+        public async Task<IEnumerable<CriterionOptionDto>>
+            CreateCriterionOptionAsync(CreateCriterionOptionsDto dto)
         {
-            var criterionOption = new CriterionOption
-            {
-                CriterionId = dto.CriterionId,
-                Value = dto.Value,
-                Rank = dto.Rank
-            };
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            await _repo.AddAsync<CriterionOption>(criterionOption);
+            var criterion = await _repo.GetByIdAsync<Criterion>(dto.CriterionId);
+
+            if (criterion == null)
+                throw new KeyNotFoundException(
+                    $"Criterion with ID {dto.CriterionId} not found.");
+
+            ValidateCriterionType(criterion);
+
+            if (dto.Options == null || dto.Options.Count < 2)
+                throw new ArgumentException(
+                    "At least two criterion options are required.");
+
+            ValidateOptionValues(dto.Options);
+
+            var existingOptions = await _repo
+                .AllReadonly<CriterionOption>()
+                .AnyAsync(co => co.CriterionId == dto.CriterionId);
+
+            if (existingOptions)
+                throw new ArgumentException(
+                    "This criterion already has options.");
+
+            var options = dto.Options
+                .Select((value, index) => new CriterionOption
+                {
+                    CriterionId = dto.CriterionId,
+                    Value = value.Trim(),
+                    Rank = index + 1
+                })
+                .ToList();
+
+            await _repo.AddRangeAsync(options);
             await _repo.SaveChangesAsync();
 
-            return new CriterionOptionDto(
-                criterionOption.Id,
-                criterionOption.CriterionId,
-                criterionOption.Value,
-                criterionOption.Rank
-            );
+            return options
+                .OrderBy(o => o.Rank)
+                .Select(o => new CriterionOptionDto(
+                    o.Id,
+                    o.CriterionId,
+                    o.Value,
+                    o.Rank
+                ));
         }
 
         public async Task<bool> DeleteCriterionOptionAsync(int id)
         {
-            var criterionOption = await _repo.GetByIdAsync<CriterionOption>(id);
+            var option = await _repo.GetByIdAsync<CriterionOption>(id);
 
-            if (criterionOption == null)
+            if (option == null)
                 return false;
 
-            await _repo.DeleteAsync<CriterionOption>(criterionOption);
+            var remainingOptions = await _repo.All<CriterionOption>()
+                .Where(co =>
+                    co.CriterionId == option.CriterionId &&
+                    co.Id != id)
+                .OrderBy(co => co.Rank)
+                .ToListAsync();
+
+            _repo.Delete(option);
+
+            for (int i = 0; i < remainingOptions.Count; i++)
+            {
+                remainingOptions[i].Rank = i + 1;
+            }
+
             await _repo.SaveChangesAsync();
+
             return true;
         }
 
-        public async Task<IEnumerable<CriterionOptionDto>> GetAllCriterionOptionsAsync()
+        public async Task<IEnumerable<CriterionOptionDto>>
+            GetAllCriterionOptionsAsync()
         {
             return await _repo.AllReadonly<CriterionOption>()
+                .OrderBy(co => co.CriterionId)
+                .ThenBy(co => co.Rank)
                 .Select(co => new CriterionOptionDto(
                     co.Id,
                     co.CriterionId,
@@ -59,7 +107,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .ToListAsync();
         }
 
-        public async Task<CriterionOptionDto?> GetCriterionOptionByIdAsync(int id)
+        public async Task<CriterionOptionDto?>
+            GetCriterionOptionByIdAsync(int id)
         {
             return await _repo.AllReadonly<CriterionOption>()
                 .Where(co => co.Id == id)
@@ -72,29 +121,167 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task PatchCriterionOptionAsync(int id, PatchCriterionOptionDto dto)
+        public async Task PatchCriterionOptionAsync(
+            int id,
+            PatchCriterionOptionDto dto)
         {
-            var criterionOption = _repo.GetByIdAsync<CriterionOption>(id).Result ?? throw new ArgumentException($"Criterion Option with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            if(dto.CriterionId.HasValue)
-                criterionOption.CriterionId = dto.CriterionId.Value;
-            if(dto.Value != null)
-                criterionOption.Value = dto.Value;
-            if(dto.Rank.HasValue && dto.Rank.Value > 0)
-                criterionOption.Rank = dto.Rank.Value;
+            var criterionOption =
+                await _repo.GetByIdAsync<CriterionOption>(id);
+
+            if (criterionOption == null)
+                throw new KeyNotFoundException(
+                    $"Criterion Option with ID {id} not found.");
+
+            var criterionId =
+                dto.CriterionId ?? criterionOption.CriterionId;
+
+            var value =
+                dto.Value ?? criterionOption.Value;
+
+            var criterion =
+                await _repo.GetByIdAsync<Criterion>(criterionId);
+
+            if (criterion == null)
+                throw new KeyNotFoundException(
+                    $"Criterion with ID {criterionId} not found.");
+
+            ValidateCriterionType(criterion);
+            ValidateOptionValue(value);
+
+            if (criterionId != criterionOption.CriterionId)
+            {
+                var existingOptions = await _repo
+                    .AllReadonly<CriterionOption>()
+                    .AnyAsync(co =>
+                        co.CriterionId == criterionId &&
+                        co.Id != id);
+
+                if (existingOptions)
+                    throw new ArgumentException(
+                        "The target criterion already has options.");
+
+                criterionOption.CriterionId = criterionId;
+                criterionOption.Rank = 1;
+            }
+
+            criterionOption.Value = value.Trim();
 
             await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateCriterionOptionAsync(int id, UpdateCriterionOptionDto dto)
+        public async Task UpdateCriterionOptionAsync(
+            int criterionId,
+            UpdateCriterionOptionsDto dto)
         {
-            var criterionOption = await _repo.GetByIdAsync<CriterionOption>(id) ?? throw new ArgumentException($"Criterio nOption with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            criterionOption.CriterionId = dto.CriterionId;
-            criterionOption.Value = dto.Value;
-            criterionOption.Rank = dto.Rank;
+            var criterion = await _repo.GetByIdAsync<Criterion>(criterionId);
+
+            if (criterion == null)
+                throw new KeyNotFoundException(
+                    $"Criterion with ID {criterionId} not found.");
+
+            ValidateCriterionType(criterion);
+
+            var options = await _repo.All<CriterionOption>()
+                .Where(co => co.CriterionId == criterionId)
+                .ToListAsync();
+
+            if (options.Count == 0)
+                throw new KeyNotFoundException(
+                    $"No criterion options found for criterion {criterionId}.");
+
+            if (dto.Options == null ||
+                dto.Options.Count != options.Count)
+            {
+                throw new ArgumentException(
+                    "All criterion options must be provided.");
+            }
+
+            ValidateUpdateOptions(dto.Options);
+
+            var existingIds = options
+                .Select(o => o.Id)
+                .ToHashSet();
+
+            var submittedIds = dto.Options
+                .Select(o => o.Id)
+                .ToHashSet();
+
+            if (!existingIds.SetEquals(submittedIds))
+                throw new ArgumentException(
+                    "The submitted options do not match the criterion options.");
+
+            var optionsById = options.ToDictionary(o => o.Id);
+
+            for (int i = 0; i < dto.Options.Count; i++)
+            {
+                var input = dto.Options[i];
+                var option = optionsById[input.Id];
+
+                option.Value = input.Value.Trim();
+                option.Rank = i + 1;
+            }
 
             await _repo.SaveChangesAsync();
+        }
+
+        private static void ValidateCriterionType(Criterion criterion)
+        {
+            if (criterion.CriterionType != CriterionType.Categorical)
+            {
+                throw new ArgumentException(
+                    "Criterion options can only be created for a categorical criterion.");
+            }
+        }
+
+        private static void ValidateOptionValues(
+            IEnumerable<string> values)
+        {
+            foreach (var value in values)
+            {
+                ValidateOptionValue(value);
+            }
+
+            if (values
+                .GroupBy(
+                    value => value.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException(
+                    "Criterion options must be unique.");
+            }
+        }
+
+        private static void ValidateUpdateOptions(
+            IEnumerable<CriterionOptionOrderDto> options)
+        {
+            foreach (var option in options)
+            {
+                ValidateOptionValue(option.Value);
+            }
+
+            if (options
+                .GroupBy(
+                    option => option.Value.Trim(),
+                    StringComparer.OrdinalIgnoreCase)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException(
+                    "Criterion option values must be unique.");
+            }
+        }
+
+        private static void ValidateOptionValue(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException(
+                    "Criterion options cannot be empty.");
         }
     }
 }

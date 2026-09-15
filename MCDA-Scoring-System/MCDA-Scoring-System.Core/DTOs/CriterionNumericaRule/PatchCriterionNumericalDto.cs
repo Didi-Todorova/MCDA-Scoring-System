@@ -6,8 +6,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionNumericalRu
     (
         int? CriterionId,
         NumericType? NumericType,
-        decimal MinValue,
-        decimal MaxValue,
+        decimal? MinValue,
+        decimal? MaxValue,
         decimal? TargetValue,
         Direction? Direction
     );

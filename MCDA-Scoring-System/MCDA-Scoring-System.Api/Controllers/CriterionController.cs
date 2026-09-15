@@ -1,6 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Criterion;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
@@ -17,46 +16,110 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<CriterionDto>> Create([FromBody] CreateCriterionDto dto)
+        public async Task<IActionResult> Create(
+            [FromBody] CreateCriterionDto dto)
         {
-            var criterion = await _criterionService.CreateCriterionAsync(dto);
+            try
+            {
+                var criterion =
+                    await _criterionService.CreateCriterionAsync(dto);
 
-            return CreatedAtAction(nameof(GetById), new { id = criterion.Id }, criterion);
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = criterion.Id },
+                    criterion);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<CriterionDto>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var criterion = await _criterionService.GetCriterionByIdAsync(id);
-            return criterion is not null ? Ok(criterion) : NotFound(new { Error = $"Criterion with ID {id} not found" });
+            var criterion =
+                await _criterionService.GetCriterionByIdAsync(id);
+
+            if (criterion == null)
+            {
+                return NotFound(new
+                {
+                    Error = $"Criterion with ID {id} not found."
+                });
+            }
+
+            return Ok(criterion);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var criteria = await _criterionService.GetAllCriteriaAsync();
-            return criteria is not null ? Ok(criteria) : NotFound(new { Error = "No criteria found" });
+            var criteria =
+                await _criterionService.GetAllCriteriaAsync();
+
+            return Ok(criteria);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCriterionDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] UpdateCriterionDto dto)
         {
-            await _criterionService.UpdateCriterionAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _criterionService
+                    .UpdateCriterionAsync(id, dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchCriterionDto dto)
+        public async Task<IActionResult> Patch(
+            int id,
+            [FromBody] PatchCriterionDto dto)
         {
-            await _criterionService.PatchCriterionAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _criterionService
+                    .PatchCriterionAsync(id, dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _criterionService.DeleteCriterionAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Criterion with ID {id} not found" });
+            var result =
+                await _criterionService.DeleteCriterionAsync(id);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    Error = $"Criterion with ID {id} not found."
+                });
+            }
+
+            return NoContent();
         }
     }
 }

@@ -1,20 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
+﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 {
-
-    [ApiController]
     [Route("api/[controller]")]
-    public class NumericalValuesController : ControllerBase
+    [ApiController]
+    public class CalculateRatingController : ControllerBase
     {
-        private readonly IRatingService _numericalValuesService;
+        private readonly IRatingService _ratingService;
 
-        public NumericalValuesController(
-            IRatingService numericalValuesService)
+        public CalculateRatingController(IRatingService ratingService)
         {
-            _numericalValuesService = numericalValuesService;
+            _ratingService = ratingService;
         }
 
         [HttpGet("rating")]
@@ -24,31 +21,28 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         {
             try
             {
-                var rating = await _numericalValuesService
-                    .CalculateRatingAsync(alternativeId, criterionId);
+                var rating = await _ratingService
+                    .CalculateRatingAsync(
+                        alternativeId,
+                        criterionId);
 
                 return Ok(rating);
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound(new
-                {
-                    message = ex.Message
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new
-                {
-                    message = ex.Message
-                });
+                return NotFound(new { Error = ex.Message });
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                return BadRequest(new
-                {
-                    message = ex.Message
-                });
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
             }
         }
     }

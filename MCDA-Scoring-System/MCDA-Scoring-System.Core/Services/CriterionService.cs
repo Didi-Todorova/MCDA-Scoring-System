@@ -9,28 +9,41 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 {
     public class CriterionService : ICriterionService
     {
-        private IRepository repo;
+        private readonly IRepository _repo;
 
         public CriterionService(IRepository repo)
         {
-            this.repo = repo;
+            _repo = repo;
         }
 
-        public async Task<CriterionDto> CreateCriterionAsync(CreateCriterionDto dto)
+        public async Task<CriterionDto> CreateCriterionAsync(
+            CreateCriterionDto dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            ValidateName(dto.Name);
+            ValidateCriterionType(dto.CriterionType);
+            ValidateWeight(dto.Weight);
+
+            var decision = await _repo.GetByIdAsync<Decision>(dto.DecisionId);
+
+            if (decision == null)
+                throw new KeyNotFoundException(
+                    $"Decision with ID {dto.DecisionId} not found.");
+
             var criterion = new Criterion
             {
                 DecisionId = dto.DecisionId,
-                Name = dto.Name,
+                Name = dto.Name.Trim(),
                 CriterionType = dto.CriterionType,
                 Weight = dto.Weight
             };
 
-            await repo.AddAsync(criterion);
-            repo.SaveChangesAsync();
+            await _repo.AddAsync(criterion);
+            await _repo.SaveChangesAsync();
 
-            return new CriterionDto
-            (
+            return new CriterionDto(
                 criterion.Id,
                 criterion.DecisionId,
                 criterion.Name,
@@ -41,23 +54,24 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         public async Task<bool> DeleteCriterionAsync(int id)
         {
-            var criterion = await repo.GetByIdAsync<Criterion>(id);
-            if(criterion == null)
+            var criterion = await _repo.GetByIdAsync<Criterion>(id);
+
+            if (criterion == null)
                 return false;
 
-            await repo.DeleteAsync<Criterion>(id);
-            await repo.SaveChangesAsync();
+            _repo.Delete(criterion);
+            await _repo.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<IEnumerable<CriterionDto>> GetAllCriteriaAsync()
+        public async Task<IEnumerable<CriterionDto>>
+            GetAllCriteriaAsync()
         {
-            return await repo
-                .AllReadonly<Criterion>()
+            return await _repo.AllReadonly<Criterion>()
                 .Select(c => new CriterionDto(
                     c.Id,
-                    c.DecisionId,   
+                    c.DecisionId,
                     c.Name,
                     c.CriterionType,
                     c.Weight
@@ -65,10 +79,11 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .ToListAsync();
         }
 
-        public async Task<CriterionDto?> GetCriterionByIdAsync(int id)
+        public async Task<CriterionDto?>
+            GetCriterionByIdAsync(int id)
         {
-            return await repo.AllReadonly<Criterion>()
-                .Where(c =>c.Id ==id)
+            return await _repo.AllReadonly<Criterion>()
+                .Where(c => c.Id == id)
                 .Select(c => new CriterionDto(
                     c.Id,
                     c.DecisionId,
@@ -79,32 +94,150 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task PatchCriterionAsync(int id, PatchCriterionDto dto)
+        public async Task PatchCriterionAsync(
+            int id,
+            PatchCriterionDto dto)
         {
-            var criterion = await repo.GetByIdAsync<Criterion>(id) ?? throw new ArgumentException($"Criterion with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            if(dto.DecisionId.HasValue)
-                criterion.DecisionId = dto.DecisionId.Value;
-            if(dto.Name != null)
-                criterion.Name = dto.Name;
-            if(dto.CriterionType.HasValue)
-                criterion.CriterionType = dto.CriterionType.Value;
-            if(dto.Weight != null)
-                criterion.Weight = dto.Weight;
+            var criterion = await _repo.GetByIdAsync<Criterion>(id);
 
-            await repo.SaveChangesAsync();
+            if (criterion == null)
+                throw new KeyNotFoundException(
+                    $"Criterion with ID {id} not found.");
+
+            var decisionId =
+                dto.DecisionId ?? criterion.DecisionId;
+
+            var name =
+                dto.Name ?? criterion.Name;
+
+            var criterionType =
+                dto.CriterionType ?? criterion.CriterionType;
+
+            var weight =
+                dto.Weight ?? criterion.Weight;
+
+            ValidateName(name);
+            ValidateCriterionType(criterionType);
+            ValidateWeight(weight);
+
+            if (decisionId != criterion.DecisionId)
+            {
+                var decision =
+                    await _repo.GetByIdAsync<Decision>(decisionId);
+
+                if (decision == null)
+                    throw new KeyNotFoundException(
+                        $"Decision with ID {decisionId} not found.");
+
+                criterion.DecisionId = decisionId;
+            }
+
+            if (criterionType != criterion.CriterionType)
+            {
+                var hasOptions = await _repo
+                    .AllReadonly<CriterionOption>()
+                    .AnyAsync(co => co.CriterionId == criterion.Id);
+
+                var hasNumericalRule = await _repo
+                    .AllReadonly<CriterionNumericalRule>()
+                    .AnyAsync(nr => nr.CriterionId == criterion.Id);
+
+                if (hasOptions || hasNumericalRule)
+                {
+                    throw new ArgumentException(
+                        "Criterion type cannot be changed while the criterion has existing configuration.");
+                }
+
+                criterion.CriterionType = criterionType;
+            }
+
+            criterion.Name = name.Trim();
+            criterion.Weight = weight;
+
+            await _repo.SaveChangesAsync();
         }
 
-        public async Task UpdateCriterionAsync(int id, UpdateCriterionDto dto)
+        public async Task UpdateCriterionAsync(
+            int id,
+            UpdateCriterionDto dto)
         {
-            var criterion = await repo.GetByIdAsync<Criterion>(id) ?? throw new ArgumentException($"Criterion with ID {id} not found.");
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            criterion.DecisionId = dto.DecisionId;   
-            criterion.Name = dto.Name;
-            criterion.CriterionType = dto.CriterionType; 
+            var criterion = await _repo.GetByIdAsync<Criterion>(id);
+
+            if (criterion == null)
+                throw new KeyNotFoundException(
+                    $"Criterion with ID {id} not found.");
+
+            ValidateName(dto.Name);
+            ValidateCriterionType(dto.CriterionType);
+            ValidateWeight(dto.Weight);
+
+            var decision = await _repo.GetByIdAsync<Decision>(
+                dto.DecisionId);
+
+            if (decision == null)
+                throw new KeyNotFoundException(
+                    $"Decision with ID {dto.DecisionId} not found.");
+
+            if (dto.CriterionType != criterion.CriterionType)
+            {
+                var hasOptions = await _repo
+                    .AllReadonly<CriterionOption>()
+                    .AnyAsync(co => co.CriterionId == criterion.Id);
+
+                var hasNumericalRule = await _repo
+                    .AllReadonly<CriterionNumericalRule>()
+                    .AnyAsync(nr => nr.CriterionId == criterion.Id);
+
+                if (hasOptions || hasNumericalRule)
+                {
+                    throw new ArgumentException(
+                        "Criterion type cannot be changed while the criterion has existing configuration.");
+                }
+            }
+
+            criterion.DecisionId = dto.DecisionId;
+            criterion.Name = dto.Name.Trim();
+            criterion.CriterionType = dto.CriterionType;
             criterion.Weight = dto.Weight;
 
-            await repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync();
+        }
+
+        private static void ValidateName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException(
+                    "Criterion name is required.");
+        }
+
+        private static void ValidateCriterionType(
+            CriterionType criterionType)
+        {
+            if (!Enum.IsDefined(
+                    typeof(CriterionType),
+                    criterionType))
+            {
+                throw new ArgumentException(
+                    "Invalid criterion type.");
+            }
+        }
+
+        private static void ValidateWeight(decimal? weight)
+        {
+            if (!weight.HasValue)
+                return;
+
+            if (weight.Value < 0 || weight.Value > 1)
+            {
+                throw new ArgumentException(
+                    "Criterion weight must be between 0 and 1.");
+            }
         }
     }
 }

@@ -5,6 +5,7 @@
         int Id,
         int CriterionNumericalRuleId,
         decimal MinValue,
-        decimal MaxValue
+        decimal MaxValue,
+        int Rank
     );
 }

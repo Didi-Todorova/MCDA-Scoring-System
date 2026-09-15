@@ -1,6 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.AlternativeValue;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
@@ -11,51 +10,121 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     {
         private readonly IAlternativeValueService _alternativeValueService;
 
-        public AlternativeValueController(IAlternativeValueService alternativeValueService)
+        public AlternativeValueController(
+            IAlternativeValueService alternativeValueService)
         {
             _alternativeValueService = alternativeValueService;
         }
 
         [HttpPost]
-        public async Task<ActionResult<AlternativeValueDto>> Create([FromBody] CreateAlternativeValueDto dto)
+        public async Task<IActionResult> Create(
+            [FromBody] CreateAlternativeValueDto dto)
         {
-            var alternativeValue = await _alternativeValueService.CreateAlternativeValueAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = alternativeValue.Id }, alternativeValue);
+            try
+            {
+                var alternativeValue =
+                    await _alternativeValueService
+                        .CreateAlternativeValueAsync(dto);
+
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = alternativeValue.Id },
+                    alternativeValue);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<AlternativeValueDto>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var alternativeValue = await _alternativeValueService.GetAlternativeValueByIdAsync(id);
-            return alternativeValue is not null ? Ok(alternativeValue) : NotFound(new { Error = $"Alternative value with ID {id} not found" });
+            var alternativeValue =
+                await _alternativeValueService
+                    .GetAlternativeValueByIdAsync(id);
+
+            if (alternativeValue == null)
+            {
+                return NotFound(new
+                {
+                    Error = $"Alternative value with ID {id} not found."
+                });
+            }
+
+            return Ok(alternativeValue);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var alternativeValues = await _alternativeValueService.GetAllAlternativeValuesAsync();
-            return alternativeValues is not null ? Ok(alternativeValues) : NotFound(new { Error = "No alternative values found" });
+            var alternativeValues =
+                await _alternativeValueService
+                    .GetAllAlternativeValuesAsync();
+
+            return Ok(alternativeValues);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateAlternativeValueDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] UpdateAlternativeValueDto dto)
         {
-            await _alternativeValueService.UpdateAlternativeValueAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _alternativeValueService
+                    .UpdateAlternativeValueAsync(id, dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchAlternativeValueDto dto)
+        public async Task<IActionResult> Patch(
+            int id,
+            [FromBody] PatchAlternativeValueDto dto)
         {
-            await _alternativeValueService.PatchAlternativeValueAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _alternativeValueService
+                    .PatchAlternativeValueAsync(id, dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _alternativeValueService.DeleteAlternativeValueAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Alternative value with ID {id} not found" });
+            var result =
+                await _alternativeValueService
+                    .DeleteAlternativeValueAsync(id);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    Error = $"Alternative value with ID {id} not found."
+                });
+            }
+
+            return NoContent();
         }
     }
 }

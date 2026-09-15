@@ -3,7 +3,6 @@
     public record PatchCriterionOptionDto
      (
         int? CriterionId,
-        string? Value,
-        int? Rank
+        string? Value
     );
 }

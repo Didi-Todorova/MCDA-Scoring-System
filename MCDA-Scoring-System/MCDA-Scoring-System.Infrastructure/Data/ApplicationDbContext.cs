@@ -106,7 +106,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure
                 .Property(ncr => ncr.TargetValue)
                 .HasPrecision(18, 2);
 
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+            //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
         }
     }
 }

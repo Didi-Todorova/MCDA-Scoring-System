@@ -1,6 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionOption;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
@@ -11,51 +10,122 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     {
         private readonly ICriterionOptionService _criterionOptionService;
 
-        public CriterionOptionController(ICriterionOptionService criterionOptionService)
+        public CriterionOptionController(
+            ICriterionOptionService criterionOptionService)
         {
             _criterionOptionService = criterionOptionService;
         }
 
         [HttpPost]
-        public async Task<ActionResult<CriterionOptionDto>> Create([FromBody] CreateCriterionOptionDto dto)
+        public async Task<IActionResult> Create(
+            [FromBody] CreateCriterionOptionsDto dto)
         {
-            var criterionOption = await _criterionOptionService.CreateCriterionOptionAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = criterionOption.Id }, criterionOption);
+            try
+            {
+                var criterionOptions =
+                    await _criterionOptionService
+                        .CreateCriterionOptionAsync(dto);
+
+                return Ok(criterionOptions);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<CriterionOptionDto>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var criterionOption = await _criterionOptionService.GetCriterionOptionByIdAsync(id);
-            return criterionOption is not null ? Ok(criterionOption) : NotFound(new { Error = $"Criterion option with ID {id} not found" });
+            var criterionOption =
+                await _criterionOptionService
+                    .GetCriterionOptionByIdAsync(id);
+
+            if (criterionOption == null)
+            {
+                return NotFound(new
+                {
+                    Error =
+                        $"Criterion option with ID {id} not found."
+                });
+            }
+
+            return Ok(criterionOption);
         }
 
-        [HttpGet]   
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var criterionOptions = await _criterionOptionService.GetAllCriterionOptionsAsync();
-            return criterionOptions is not null ? Ok(criterionOptions) : NotFound(new { Error = "No criterion options found" });
+            var criterionOptions =
+                await _criterionOptionService
+                    .GetAllCriterionOptionsAsync();
+
+            return Ok(criterionOptions);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCriterionOptionDto dto)
+        [HttpPut("criterion/{criterionId}")]
+        public async Task<IActionResult> Update(
+            int criterionId,
+            [FromBody] UpdateCriterionOptionsDto dto)
         {
-            await _criterionOptionService.UpdateCriterionOptionAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _criterionOptionService
+                    .UpdateCriterionOptionAsync(
+                        criterionId,
+                        dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchCriterionOptionDto dto)
+        public async Task<IActionResult> Patch(
+            int id,
+            [FromBody] PatchCriterionOptionDto dto)
         {
-            await _criterionOptionService.PatchCriterionOptionAsync(id, dto);
-            return NoContent();
+            try
+            {
+                await _criterionOptionService
+                    .PatchCriterionOptionAsync(id, dto);
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _criterionOptionService.DeleteCriterionOptionAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Criterion option with ID {id} not found" });
+            var result =
+                await _criterionOptionService
+                    .DeleteCriterionOptionAsync(id);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    Error =
+                        $"Criterion option with ID {id} not found."
+                });
+            }
+
+            return NoContent();
         }
     }
 }

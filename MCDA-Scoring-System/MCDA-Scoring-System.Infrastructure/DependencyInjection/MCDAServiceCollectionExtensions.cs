@@ -3,6 +3,7 @@ using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleService;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.WeightingServices;
 using MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Repositories;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjection
 {
@@ -21,6 +22,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.DependencyInjec
             services.AddScoped<IRatingService, RatingService>();
             services.AddScoped<IPercentageAllocationService, PercentageAllocationService>();
             services.AddScoped<IDirectRankingService, DirectRankingService>();
+            services.AddScoped<IScoringService, ScoringService>();
 
             return services;
         }

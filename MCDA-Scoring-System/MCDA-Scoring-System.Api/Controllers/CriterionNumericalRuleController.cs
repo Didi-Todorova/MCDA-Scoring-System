@@ -1,6 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.CriterionNumericalRule;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
@@ -9,67 +8,127 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     [ApiController]
     public class CriterionNumericalRuleController : ControllerBase
     {
-        private readonly ICriterionNumericalRuleService _numericalCriterionRuleService;
+        private readonly ICriterionNumericalRuleService
+            _numericalCriterionRuleService;
 
-        public CriterionNumericalRuleController(ICriterionNumericalRuleService numericalCriterionRuleService)
+        public CriterionNumericalRuleController(
+            ICriterionNumericalRuleService numericalCriterionRuleService)
         {
-            _numericalCriterionRuleService = numericalCriterionRuleService;
+            _numericalCriterionRuleService =
+                numericalCriterionRuleService;
         }
 
         [HttpPost]
-        public async Task<ActionResult<CriterionNumericalRuleDto>> Create([FromBody] CreateCriterionNumericalRuleDto dto)
+        public async Task<IActionResult> Create(
+            [FromBody] CreateCriterionNumericalRuleDto dto)
         {
-            var rule = await _numericalCriterionRuleService.CreateCriterionNumericalRuleAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = rule.Id }, rule);
+            try
+            {
+                var rule =
+                    await _numericalCriterionRuleService
+                        .CreateCriterionNumericalRuleAsync(dto);
+
+                return CreatedAtAction(
+                    nameof(GetById),
+                    new { id = rule.Id },
+                    rule);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<CriterionNumericalRuleDto>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var rule = await _numericalCriterionRuleService.GetCriterionNumericalRuleByIdAsync(id);
-            return rule == null ? NotFound(new { Error = $"Criterion Numerical Rule with ID {id} not found" }) : Ok(rule);
+            var rule =
+                await _numericalCriterionRuleService
+                    .GetCriterionNumericalRuleByIdAsync(id);
+
+            if (rule == null)
+            {
+                return NotFound(new
+                {
+                    Error =
+                        $"Criterion Numerical Rule with ID {id} not found."
+                });
+            }
+
+            return Ok(rule);
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CriterionNumericalRuleDto>>> GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var rules = await _numericalCriterionRuleService.GetAllCriterionNumericalRulesAsync();
+            var rules =
+                await _numericalCriterionRuleService
+                    .GetAllCriterionNumericalRulesAsync();
+
             return Ok(rules);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateCriterionNumericalRuleDto dto)
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] UpdateCriterionNumericalRuleDto dto)
         {
             try
             {
-                await _numericalCriterionRuleService.UpdateCriterionNumericalRuleAsync(id, dto);
+                await _numericalCriterionRuleService
+                    .UpdateCriterionNumericalRuleAsync(id, dto);
+
                 return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchCriterionNumericalDto dto)
+        public async Task<IActionResult> Patch(
+            int id,
+            [FromBody] PatchCriterionNumericalDto dto)
         {
             try
             {
-                await _numericalCriterionRuleService.PatchCriterionNumericalRuleAsync(id, dto);
+                await _numericalCriterionRuleService
+                    .PatchCriterionNumericalRuleAsync(id, dto);
+
                 return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _numericalCriterionRuleService.DeleteCriterionNumericalRuleAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Criterion Numerical Rule with ID {id} not found" });
+            var result =
+                await _numericalCriterionRuleService
+                    .DeleteCriterionNumericalRuleAsync(id);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    Error =
+                        $"Criterion Numerical Rule with ID {id} not found."
+                });
+            }
+
+            return NoContent();
         }
     }
 }

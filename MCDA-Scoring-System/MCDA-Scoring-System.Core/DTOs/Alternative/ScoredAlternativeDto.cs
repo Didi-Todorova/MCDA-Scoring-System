@@ -1,8 +1,9 @@
 ﻿namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Alternative
 {
-    public record CreateAlternativeDto
-    (
+    public record ScoredAlternativeDto(
+        int Id,
         int DecisionId,
-        string Name
+        string Name,
+        decimal Score
     );
 }

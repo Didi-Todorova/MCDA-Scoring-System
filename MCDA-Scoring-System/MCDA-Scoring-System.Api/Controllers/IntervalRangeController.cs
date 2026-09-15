@@ -1,6 +1,5 @@
 ﻿using MCDA_Scoring_System.MCDA_Scoring_System.Core.Contracts;
 using MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.IntervalRange;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
@@ -9,67 +8,116 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     [ApiController]
     public class IntervalRangeController : ControllerBase
     {
-        private readonly IIntervalRangeService _numericRangeService;
+        private readonly IIntervalRangeService _intervalRangeService;
 
-        public IntervalRangeController(IIntervalRangeService numericRangeService)
+        public IntervalRangeController(
+            IIntervalRangeService intervalRangeService)
         {
-            _numericRangeService = numericRangeService;
+            _intervalRangeService = intervalRangeService;
         }
 
         [HttpPost]
-        public async Task<ActionResult<IntervalRangeDto>> Create([FromBody] CreateIntervalRangeDto dto)
+        public async Task<IActionResult> Create(
+            [FromBody] CreateIntervalRangesDto dto)
         {
-            var numericRange = await _numericRangeService.CreateIntervalRangeAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = numericRange.Id }, numericRange);
+            try
+            {
+                var ranges =
+                    await _intervalRangeService
+                        .CreateIntervalRangesAsync(dto);
+
+                return Ok(ranges);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<IntervalRangeDto>> GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var numericRange = await _numericRangeService.GetIntervalRangeByIdAsync(id);
-            return numericRange == null ? NotFound(new { Error = $"Interval Range with ID {id} not found" }) : Ok(numericRange);
+            var range =
+                await _intervalRangeService
+                    .GetIntervalRangeByIdAsync(id);
+
+            if (range == null)
+            {
+                return NotFound(new
+                {
+                    Error = $"Interval Range with ID {id} not found."
+                });
+            }
+
+            return Ok(range);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var numericRanges = await _numericRangeService.GetAllIntervalRangesAsync();
-            return numericRanges == null ? NotFound(new { Error = "No Interval Ranges found" }) : Ok(numericRanges);
+            var ranges =
+                await _intervalRangeService
+                    .GetAllIntervalRangesAsync();
+
+            return Ok(ranges);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateIntervalRangeDto dto)
+        [HttpGet("rule/{criterionNumericalRuleId}")]
+        public async Task<IActionResult> GetByRuleId(
+            int criterionNumericalRuleId)
+        {
+            var ranges =
+                await _intervalRangeService
+                    .GetIntervalRangesByRuleIdAsync(
+                        criterionNumericalRuleId);
+
+            return Ok(ranges);
+        }
+
+        [HttpPut("rule/{criterionNumericalRuleId}")]
+        public async Task<IActionResult> Update(
+            int criterionNumericalRuleId,
+            [FromBody] UpdateIntervalRangesDto dto)
         {
             try
             {
-                await _numericRangeService.UpdateIntervalRangeAsync(id, dto);
-                return NoContent();
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new { Error = ex.Message });
-            }
-        }
+                await _intervalRangeService
+                    .UpdateIntervalRangesAsync(
+                        criterionNumericalRuleId,
+                        dto);
 
-        [HttpPatch("{id}")]
-        public async Task<IActionResult> Patch(int id, [FromBody] PatchIntervalRangeDto dto)
-        {
-            try
-            {
-                await _numericRangeService.PatchIntervalRangeAsync(id, dto);
                 return NoContent();
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
             }
             catch (ArgumentException ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return BadRequest(new { Error = ex.Message });
             }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _numericRangeService.DeleteIntervalRangeAsync(id);
-            return result ? NoContent() : NotFound(new { Error = $"Interval Range with ID {id} not found" });
+            var result =
+                await _intervalRangeService
+                    .DeleteIntervalRangeAsync(id);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    Error = $"Interval Range with ID {id} not found."
+                });
+            }
+
+            return NoContent();
         }
     }
 }
