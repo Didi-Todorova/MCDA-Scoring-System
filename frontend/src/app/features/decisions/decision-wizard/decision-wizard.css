@@ -1,0 +1,121 @@
+.wizard-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.wizard-header {
+  margin-bottom: 32px;
+}
+
+.wizard-header h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.wizard-header p {
+  margin: 0;
+  color: #666;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-bottom: 3px solid #ddd;
+  background: transparent;
+  color: #777;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.step:hover {
+  background: #f5f5f5;
+}
+
+.step.active {
+  border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.step.completed {
+  color: #2e7d32;
+  border-bottom-color: #2e7d32;
+}
+
+.step.active {
+  border-bottom-color: #1976d2;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #eee;
+  font-weight: 600;
+}
+
+.step.active .step-number {
+  background: #1976d2;
+  color: white;
+}
+
+.wizard-content {
+  min-height: 300px;
+  padding: 32px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: white;
+}
+
+.wizard-content h2 {
+  margin-top: 0;
+}
+
+.wizard-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.wizard-actions button {
+  padding: 10px 18px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+
+.wizard-actions button:last-child {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.wizard-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

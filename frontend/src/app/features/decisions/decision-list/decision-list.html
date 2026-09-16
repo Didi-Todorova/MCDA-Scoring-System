@@ -1,0 +1,68 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h1>Decisions</h1>
+      <p>Manage your MCDA decision models.</p>
+    </div>
+
+    <button
+      type="button"
+      class="primary-button"
+      (click)="createDecision()"
+    >
+      + New Decision
+    </button>
+  </header>
+
+  @if (isLoading) {
+    <div class="state-message">
+      Loading decisions...
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+
+      <button type="button" (click)="loadDecisions()">
+        Try again
+      </button>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && decisions.length === 0) {
+    <div class="empty-state">
+      <h2>No decisions yet</h2>
+      <p>Create your first decision to get started.</p>
+
+      <button type="button" class="primary-button">
+        Create Decision
+      </button>
+    </div>
+  }
+
+  @if (!isLoading && !errorMessage && decisions.length > 0) {
+    <div class="decision-grid">
+      @for (decision of decisions; track decision.id) {
+        <article class="decision-card">
+          <div class="card-content">
+            <h2>{{ decision.name }}</h2>
+
+            <div class="method">
+              <span class="label">Weighting method</span>
+              <span>
+                {{ getWeightingMethodName(decision.weightingMethod) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <button type="button">Open</button>
+            <button type="button">Edit</button>
+            <button type="button" class="danger-button">Delete</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>

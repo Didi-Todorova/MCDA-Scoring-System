@@ -1,0 +1,120 @@
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.page-header p {
+  margin: 0;
+  color: #666;
+}
+
+.primary-button {
+  border: none;
+  border-radius: 8px;
+  padding: 12px 18px;
+  background: #1976d2;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background: #1565c0;
+}
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.decision-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;
+  padding: 24px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.decision-card h2 {
+  margin: 0 0 24px;
+  font-size: 20px;
+}
+
+.method {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 12px;
+  color: #777;
+  text-transform: uppercase;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.card-actions button {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: white;
+  cursor: pointer;
+}
+
+.card-actions button:hover {
+  background: #f5f5f5;
+}
+
+.card-actions .danger-button {
+  color: #c62828;
+}
+
+.state-message,
+.empty-state,
+.error-message {
+  padding: 32px;
+  text-align: center;
+  border-radius: 12px;
+}
+
+.empty-state {
+  border: 1px dashed #ccc;
+}
+
+.empty-state h2 {
+  margin-top: 0;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #b71c1c;
+}
+
+.error-message button {
+  margin-left: 12px;
+}

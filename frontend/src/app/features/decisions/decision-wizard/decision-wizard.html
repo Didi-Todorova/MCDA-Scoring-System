@@ -1,0 +1,163 @@
+<div class="wizard-page">
+
+  <div class="wizard-header">
+    <h1>Create Decision</h1>
+
+    <p>
+      Decision #{{ decisionId }}
+    </p>
+  </div>
+
+  <div class="steps">
+
+    @for (step of [1, 2, 3, 4, 5, 6]; track step) {
+      <button
+        type="button"
+        class="step"
+        [class.active]="currentStep === step"
+        [class.completed]="currentStep > step"
+        (click)="goToStep(step)"
+      >
+        <span class="step-number">
+          @if (currentStep > step) {
+            ✓
+          } @else {
+            {{ step }}
+          }
+        </span>
+
+        <span>
+          @switch (step) {
+            @case (1) {
+              Basic Information
+            }
+            @case (2) {
+              Criteria
+            }
+            @case (3) {
+              Configuration
+            }
+            @case (4) {
+              Alternatives
+            }
+            @case (5) {
+              Review
+            }
+            @case (6) {
+              Results
+            }
+          }
+        </span>
+      </button>
+    }
+
+  </div>
+
+  <div class="wizard-content">
+
+    @switch (currentStep) {
+
+      @case (1) {
+        <div>
+          <h2>Basic Information</h2>
+
+          <p>
+            Your decision has been created successfully.
+          </p>
+
+          <p>
+            Decision ID:
+            <strong>{{ decisionId }}</strong>
+          </p>
+        </div>
+      }
+
+      @case (2) {
+        <div>
+          <h2>Criteria</h2>
+
+          <p>
+            Here you will define the criteria used to evaluate
+            your alternatives.
+          </p>
+        </div>
+      }
+
+      @case (3) {
+        <div>
+          <h2>Criterion Configuration</h2>
+
+          <p>
+            Configure numerical rules, categorical options,
+            directions and other criterion settings.
+          </p>
+        </div>
+      }
+
+      @case (4) {
+        <div>
+          <h2>Alternatives & Values</h2>
+
+          <p>
+            Add the alternatives and their values for each criterion.
+          </p>
+        </div>
+      }
+
+      @case (5) {
+        <div>
+          <h2>Review</h2>
+
+          <p>
+            Review your decision model before calculating the results.
+          </p>
+        </div>
+      }
+
+      @case (6) {
+        <div>
+          <h2>Results</h2>
+
+          <p>
+            Your scored alternatives will appear here.
+          </p>
+        </div>
+      }
+
+    }
+
+  </div>
+
+  <div class="wizard-actions">
+
+    <button
+      type="button"
+      class="secondary-button"
+      [disabled]="currentStep === 1"
+      (click)="previousStep()"
+    >
+      ← Back
+    </button>
+
+    @if (currentStep < totalSteps) {
+      <button
+        type="button"
+        class="primary-button"
+        (click)="nextStep()"
+      >
+        Next →
+      </button>
+    }
+
+    @if (currentStep === totalSteps) {
+      <button
+        type="button"
+        class="primary-button"
+      >
+        Finish
+      </button>
+    }
+
+  </div>
+
+</div>
