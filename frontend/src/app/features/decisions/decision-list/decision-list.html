@@ -57,7 +57,12 @@
           </div>
 
           <div class="card-actions">
-            <button type="button">Open</button>
+            <button
+              type="button"
+              (click)="openDecision(decision)"
+            >
+              Open
+            </button>
             <button type="button">Edit</button>
             <button type="button" class="danger-button">Delete</button>
           </div>

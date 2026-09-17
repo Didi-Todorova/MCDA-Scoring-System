@@ -1,0 +1,150 @@
+<div class="step-content">
+
+  <div class="step-introduction">
+    <span class="step-label">Step 1</span>
+
+    <h2>Basic Information</h2>
+
+    <p>
+      Start by giving your decision a name and choosing how the
+      importance of your criteria will be determined.
+    </p>
+  </div>
+
+  @if (isLoading) {
+    <div class="state-message">
+      Loading decision...
+    </div>
+  }
+
+  @else {
+
+    @if (errorMessage) {
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <form
+      [formGroup]="basicForm"
+      (ngSubmit)="saveAndContinue()"
+    >
+
+      <div class="form-section">
+
+        <div class="form-group">
+
+          <label for="decision-name">
+            Decision name
+          </label>
+
+          <input
+            id="decision-name"
+            type="text"
+            formControlName="name"
+            placeholder="e.g. Laptop Selection"
+          />
+
+          @if (
+            basicForm.controls.name.touched &&
+            basicForm.controls.name.hasError('required')
+          ) {
+            <small class="validation-error">
+              Decision name is required.
+            </small>
+          }
+
+          @if (
+            basicForm.controls.name.touched &&
+            basicForm.controls.name.hasError('maxlength')
+          ) {
+            <small class="validation-error">
+              Decision name cannot exceed 200 characters.
+            </small>
+          }
+
+        </div>
+
+      </div>
+
+      <div class="form-section">
+
+        <div class="section-heading">
+          <h3>Weighting method</h3>
+
+          <p>
+            Choose how the importance of your criteria will be
+            determined in the next step.
+          </p>
+        </div>
+
+        <div class="weighting-options">
+
+          <label
+            class="weighting-option"
+            [class.selected]="
+              basicForm.controls.weightingMethod.value ===
+              WeightingMethod.PercentageAllocation
+            "
+          >
+
+            <input
+              type="radio"
+              formControlName="weightingMethod"
+              [value]="WeightingMethod.PercentageAllocation"
+            />
+
+            <div class="option-content">
+              <strong>Percentage Allocation</strong>
+
+              <span>
+                Distribute 100% of the importance across your criteria.
+              </span>
+            </div>
+
+          </label>
+
+          <label
+            class="weighting-option"
+            [class.selected]="
+              basicForm.controls.weightingMethod.value ===
+              WeightingMethod.DirectRanking
+            "
+          >
+
+            <input
+              type="radio"
+              formControlName="weightingMethod"
+              [value]="WeightingMethod.DirectRanking"
+            />
+
+            <div class="option-content">
+              <strong>Direct Ranking</strong>
+
+              <span>
+                Rank your criteria from most important to least important.
+              </span>
+            </div>
+
+          </label>
+
+        </div>
+
+      </div>
+
+      <div class="form-actions">
+
+        <button
+          type="submit"
+          class="continue-button"
+          [disabled]="isSaving"
+        >
+          {{ isSaving ? 'Saving...' : 'Save & Continue →' }}
+        </button>
+
+      </div>
+
+    </form>
+  }
+
+</div>

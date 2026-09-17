@@ -1,12 +1,14 @@
 .page {
+  min-height: calc(100vh - 73px);
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 44px 24px 64px;
+  color: #173f35;
 }
 
 .page-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 32px;
@@ -14,27 +16,37 @@
 
 .page-header h1 {
   margin: 0 0 8px;
-  font-size: 32px;
+  color: #173f35;
+  font-size: 34px;
+  letter-spacing: -0.025em;
 }
 
 .page-header p {
   margin: 0;
-  color: #666;
+  color: #71837c;
+  font-size: 15px;
 }
 
 .primary-button {
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 12px 18px;
-  background: #1976d2;
+  background: #2f5d50;
   color: white;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(47, 93, 80, 0.16);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .primary-button:hover {
-  background: #1565c0;
+  background: #244b40;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(47, 93, 80, 0.22);
 }
 
 .decision-grid {
@@ -47,29 +59,47 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 180px;
-  padding: 24px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
+  min-height: 190px;
+  padding: 26px;
+  border: 1px solid #dfe9e2;
+  border-radius: 16px;
   background: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(31, 63, 52, 0.05);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.decision-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbded2;
+  box-shadow: 0 8px 24px rgba(31, 63, 52, 0.08);
 }
 
 .decision-card h2 {
   margin: 0 0 24px;
+  color: #234d41;
   font-size: 20px;
 }
 
 .method {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .label {
-  font-size: 12px;
-  color: #777;
+  color: #82938d;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+}
+
+.method-value {
+  color: #42675c;
+  font-size: 14px;
 }
 
 .card-actions {
@@ -79,42 +109,74 @@
 }
 
 .card-actions button {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 8px 12px;
+  border: 1px solid #d5e1d9;
+  border-radius: 8px;
+  padding: 8px 13px;
   background: white;
+  color: #42675c;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .card-actions button:hover {
-  background: #f5f5f5;
+  background: #f2f7f3;
+  border-color: #bfd4c7;
 }
 
 .card-actions .danger-button {
-  color: #c62828;
+  color: #a94a4a;
 }
 
 .state-message,
 .empty-state,
 .error-message {
-  padding: 32px;
+  padding: 36px;
+  border-radius: 16px;
   text-align: center;
-  border-radius: 12px;
+}
+
+.state-message {
+  color: #71837c;
 }
 
 .empty-state {
-  border: 1px dashed #ccc;
+  border: 1px dashed #cbdad1;
+  background: #fbfdfb;
 }
 
 .empty-state h2 {
   margin-top: 0;
+  color: #234d41;
+}
+
+.empty-state p {
+  color: #71837c;
 }
 
 .error-message {
-  background: #ffebee;
-  color: #b71c1c;
+  background: #f9eeee;
+  color: #9d4141;
 }
 
 .error-message button {
   margin-left: 12px;
+}
+
+@media (max-width: 700px) {
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-header .primary-button {
+    align-self: flex-start;
+  }
+
+  .decision-grid {
+    grid-template-columns: 1fr;
+  }
 }

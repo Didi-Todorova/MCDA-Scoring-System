@@ -1,0 +1,31 @@
+.step-content {
+  max-width: 720px;
+}
+
+.step-label {
+  color: #6e9a85;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+h2 {
+  margin: 8px 0 10px;
+  color: #173f35;
+  font-size: 26px;
+}
+
+p {
+  margin: 0 0 28px;
+  color: #71837c;
+  line-height: 1.6;
+}
+
+.placeholder {
+  padding: 24px;
+  border: 1px dashed #cbdad1;
+  border-radius: 12px;
+  background: #fbfdfb;
+  color: #71837c;
+}

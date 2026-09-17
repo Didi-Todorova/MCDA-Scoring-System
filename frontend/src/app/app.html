@@ -1,8 +1,23 @@
 <header class="app-header">
   <div class="app-container">
-    <a routerLink="/decisions" class="app-title">
-      MCDA Scoring System
+    <a routerLink="/" class="app-brand">
+      <span class="brand-mark">M</span>
+
+      <span class="brand-text">
+        <strong>MCDA</strong>
+        <span>Scoring System</span>
+      </span>
     </a>
+
+    <nav class="app-nav">
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        Home
+      </a>
+
+      <a routerLink="/decisions" routerLinkActive="active">
+        Decisions
+      </a>
+    </nav>
   </div>
 </header>
 

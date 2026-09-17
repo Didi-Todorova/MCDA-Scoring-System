@@ -1,0 +1,241 @@
+<div class="step-content">
+
+  <div class="step-header">
+    <div>
+      <h1>Criteria</h1>
+      <p>
+        Define the criteria that will be used to evaluate the alternatives.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="primary-button"
+      (click)="openForm()"
+      [disabled]="showForm">
+      + Add Criterion
+    </button>
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+    <div class="loading-state">
+      Loading criteria...
+    </div>
+  }
+
+  @if (!isLoading && criteria.length === 0) {
+    <div class="empty-state">
+      <h3>No criteria yet</h3>
+      <p>
+        Add your first criterion to start defining the decision model.
+      </p>
+    </div>
+  }
+
+  @if (!isLoading && criteria.length > 0) {
+
+    <div class="criteria-list">
+
+      @for (criterion of criteria; track criterion.id) {
+
+        <div class="criterion-card">
+
+          <div class="criterion-main">
+
+            <div class="criterion-info">
+
+              <h3>{{ criterion.name }}</h3>
+
+              <span class="type-badge">
+                {{ getCriterionTypeName(criterion.criterionType) }}
+              </span>
+
+              @if (criterion.criterionType === CriterionType.Numerical) {
+
+                @if (getNumericalRule(criterion.id); as rule) {
+
+                  <span class="configuration-summary">
+                    {{ getNumericTypeName(rule.numericType) }}
+                  </span>
+
+                } @else {
+
+                  <span class="not-configured">
+                    Not configured
+                  </span>
+
+                }
+
+              } @else {
+
+                @if (getCategoricalOptionCount(criterion.id) > 0) {
+
+                  <span class="configuration-summary">
+                    {{ getCategoricalOptionCount(criterion.id) }} options
+                  </span>
+
+                } @else {
+
+                  <span class="not-configured">
+                    Not configured
+                  </span>
+
+                }
+
+              }
+
+            </div>
+
+            <div class="criterion-actions">
+
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="configureCriterion(criterion)">
+                Configure
+              </button>
+
+              <button
+                type="button"
+                class="delete-button"
+                (click)="deleteCriterion(criterion)">
+                Delete
+              </button>
+
+            </div>
+
+          </div>
+
+          @if (configuringCriterionId === criterion.id) {
+
+            <div class="configuration-panel">
+
+                @if (criterion.criterionType === CriterionType.Numerical) {
+
+                <app-numerical-configuration
+                    [criterion]="criterion"
+                    [existingRule]="getNumericalRule(criterion.id)"
+                    (close)="closeConfiguration()"
+                    (ruleSaved)="onNumericalRuleSaved($event)"
+                ></app-numerical-configuration>
+
+                } @else {
+
+                <app-categorical-configuration
+                    [criterionId]="criterion.id"
+                    [criterionName]="criterion.name"
+                    [options]="categoricalOptions"
+                    (close)="closeConfiguration()"
+                    (optionsChanged)="onCategoricalOptionsChanged($event)"
+                ></app-categorical-configuration>
+
+                }
+
+            </div>
+
+            }
+
+        </div>
+
+      }
+
+    </div>
+
+  }
+
+  @if (showForm) {
+
+    <div class="add-criterion-card">
+
+      <div class="configuration-header">
+
+        <div>
+          <h3>Add Criterion</h3>
+
+          <p>
+            Choose a name and evaluation type for the criterion.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="close-button"
+          (click)="cancelForm()">
+          ×
+        </button>
+
+      </div>
+
+      <form
+        [formGroup]="criterionForm"
+        (ngSubmit)="addCriterion()">
+
+        <div class="form-group">
+
+          <label for="criterionName">
+            Criterion name
+          </label>
+
+          <input
+            id="criterionName"
+            type="text"
+            formControlName="name"
+            placeholder="e.g. Price, Performance, Brand" />
+
+        </div>
+
+        <div class="form-group">
+
+          <label for="criterionType">
+            Criterion type
+          </label>
+
+          <select
+            id="criterionType"
+            formControlName="criterionType">
+
+            <option [ngValue]="CriterionType.Numerical">
+              Numerical
+            </option>
+
+            <option [ngValue]="CriterionType.Categorical">
+              Categorical
+            </option>
+
+          </select>
+
+        </div>
+
+        <div class="configuration-actions">
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cancelForm()">
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="isSaving">
+
+            {{ isSaving ? 'Adding...' : 'Add Criterion' }}
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </div>
+
+  }
+
+</div>

@@ -1,0 +1,260 @@
+<div class="configuration-header">
+
+  <div>
+    <h3>Configure {{ criterion.name }}</h3>
+
+    <p>
+      Define how numerical values should be evaluated.
+    </p>
+  </div>
+
+  <button
+    type="button"
+    class="close-button"
+    (click)="closeConfiguration()">
+    ×
+  </button>
+
+</div>
+
+<form
+  [formGroup]="numericalRuleForm"
+  (ngSubmit)="save()">
+
+  <div class="form-group">
+
+    <label for="numericType">
+      Numerical evaluation
+    </label>
+
+    <select
+      id="numericType"
+      formControlName="numericType">
+
+      <option [ngValue]="NumericType.Scope">
+        Scope
+      </option>
+
+      <option [ngValue]="NumericType.Interval">
+        Interval
+      </option>
+
+      <option [ngValue]="NumericType.TargetValue">
+        Target Value
+      </option>
+
+    </select>
+
+  </div>
+
+  <div class="form-row">
+
+    <div class="form-group">
+
+      <label for="minValue">
+        Minimum value
+      </label>
+
+      <input
+        id="minValue"
+        type="number"
+        formControlName="minValue" />
+
+    </div>
+
+    <div class="form-group">
+
+      <label for="maxValue">
+        Maximum value
+      </label>
+
+      <input
+        id="maxValue"
+        type="number"
+        formControlName="maxValue" />
+
+    </div>
+
+  </div>
+
+  @if (
+    numericalRuleForm.controls.numericType.value ===
+    NumericType.Scope
+  ) {
+
+    <div class="form-group">
+
+      <label for="direction">
+        Direction
+      </label>
+
+      <select
+        id="direction"
+        formControlName="direction">
+
+        <option [ngValue]="Direction.Minimize">
+          Minimize
+        </option>
+
+        <option [ngValue]="Direction.Maximize">
+          Maximize
+        </option>
+
+      </select>
+
+    </div>
+
+  }
+
+  @if (
+    numericalRuleForm.controls.numericType.value ===
+    NumericType.TargetValue
+  ) {
+
+    <div class="form-group">
+
+      <label for="targetValue">
+        Target value
+      </label>
+
+      <input
+        id="targetValue"
+        type="number"
+        formControlName="targetValue" />
+
+      <small>
+        The target must be between the minimum and maximum.
+      </small>
+
+    </div>
+
+  }
+
+  @if (
+    numericalRuleForm.controls.numericType.value ===
+    NumericType.Interval
+  ) {
+
+    <div class="interval-section">
+
+      <div class="interval-header">
+
+        <div>
+          <h4>Interval ranges</h4>
+
+          <p>
+            Define the value ranges and their order of preference.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="addIntervalRange()">
+          + Add Range
+        </button>
+
+      </div>
+
+      @if (intervalRanges.length === 0) {
+
+        <div class="info-box">
+
+          <strong>No ranges configured</strong>
+
+          <p>
+            Add at least two ranges.
+          </p>
+
+        </div>
+
+      } @else {
+
+        <div class="interval-list">
+
+          @for (
+            range of intervalRanges;
+            track $index;
+            let i = $index
+          ) {
+
+            <div class="interval-row">
+
+              <div class="rank-number">
+                {{ i + 1 }}
+              </div>
+
+              <div class="interval-field">
+
+                <label>
+                  Minimum
+                </label>
+
+                <input
+                  type="number"
+                  [value]="range.minValue"
+                  (input)="updateIntervalMin(i, $event)" />
+
+              </div>
+
+              <div class="interval-field">
+
+                <label>
+                  Maximum
+                </label>
+
+                <input
+                  type="number"
+                  [value]="range.maxValue"
+                  (input)="updateIntervalMax(i, $event)" />
+
+              </div>
+
+              <button
+                type="button"
+                class="delete-button"
+                (click)="removeIntervalRange(i)">
+                Remove
+              </button>
+
+            </div>
+
+          }
+
+        </div>
+
+      }
+
+    </div>
+
+  }
+
+  @if (errorMessage) {
+
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+  <div class="configuration-actions">
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="closeConfiguration()">
+      Cancel
+    </button>
+
+    <button
+      type="submit"
+      class="primary-button"
+      [disabled]="isSaving">
+
+      {{ isSaving ? 'Saving...' : 'Save Configuration' }}
+
+    </button>
+
+  </div>
+
+</form>

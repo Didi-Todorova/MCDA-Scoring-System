@@ -77,4 +77,13 @@ export class DecisionListComponent implements OnInit {
   createDecision(): void {
   this.router.navigate(['/decisions/new']);
   }
+
+  openDecision(decision: Decision): void {
+    this.router.navigate([
+      '/decisions',
+      decision.id,
+      'wizard',
+      'basic'
+    ]);
+  }
 }

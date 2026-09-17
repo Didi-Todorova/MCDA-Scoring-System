@@ -1,0 +1,139 @@
+<div class="step-content">
+  <span class="step-label">Step 3</span>
+
+  <h2>Weighting</h2>
+
+  <p class="intro">
+    Assign importance to each criterion using your selected weighting method.
+  </p>
+
+  @if (isLoading) {
+    <div class="loading-message">
+      Loading weighting configuration...
+    </div>
+  } @else if (errorMessage && !decision) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  } @else if (decision) {
+
+    @if (currentWeightingMethod === WeightingMethod.PercentageAllocation) {
+      <div class="method-card">
+        <div class="method-header">
+          <div>
+            <span class="method-label">Weighting method</span>
+            <h3>Percentage Allocation</h3>
+          </div>
+
+          <div class="total-badge"
+               [class.valid]="totalPercentage === 100">
+            {{ totalPercentage }}%
+          </div>
+        </div>
+
+        <p class="method-description">
+          Distribute 100% of the importance across all criteria.
+          A higher percentage means the criterion has greater influence
+          on the final decision.
+        </p>
+
+        <div class="criteria-list">
+          @for (criterion of criteria; track criterion.id) {
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>{{ criterion.name }}</strong>
+                <span>
+                  {{ criterion.criterionType === CriterionType.Numerical
+                    ? 'Numerical'
+                    : 'Categorical' }}
+                </span>
+              </div>
+
+              <div class="weight-input">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  [value]="percentageWeights.find(
+                    item => item.criterionId === criterion.id
+                  )?.weight ?? 0"
+                  (input)="updatePercentageWeight(criterion.id, $event)"
+                />
+                <span>%</span>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (currentWeightingMethod === WeightingMethod.DirectRanking) {
+      <div class="method-card">
+        <div class="method-header">
+          <div>
+            <span class="method-label">Weighting method</span>
+            <h3>Direct Ranking</h3>
+          </div>
+        </div>
+
+        <p class="method-description">
+          Rank the criteria from most important to least important.
+          Rank 1 represents the most important criterion.
+        </p>
+
+        <div class="criteria-list">
+          @for (criterion of criteria; track criterion.id) {
+            <div class="criterion-row">
+              <div class="criterion-info">
+                <strong>{{ criterion.name }}</strong>
+                <span>
+                  {{ criterion.criterionType === CriterionType.Numerical
+                    ? 'Numerical'
+                    : 'Categorical' }}
+                </span>
+              </div>
+
+              <div class="rank-input">
+                <label>Rank</label>
+                <input
+                  type="number"
+                  min="1"
+                  [max]="criteria.length"
+                  step="1"
+                  [value]="rankingValues.find(
+                    item => item.criterionId === criterion.id
+                  )?.rank ?? 1"
+                  (input)="updateRank(criterion.id, $event)"
+                />
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
+    }
+
+    <div class="step-actions">
+      <button
+        type="button"
+        class="secondary-button"
+        routerLink="../criteria">
+        Back
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        [disabled]="isSaving"
+        (click)="saveAndContinue()">
+        {{ isSaving ? 'Saving...' : 'Save & Continue' }}
+      </button>
+    </div>
+  }
+</div>

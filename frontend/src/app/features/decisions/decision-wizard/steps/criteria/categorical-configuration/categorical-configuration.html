@@ -1,0 +1,116 @@
+<div class="configuration-panel">
+
+  <div class="configuration-header">
+    <div>
+      <h3>Configure {{ criterionName }}</h3>
+      <p>
+        Define the options in order of preference.
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="close-button"
+      (click)="closeConfiguration()"
+    >
+      ×
+    </button>
+  </div>
+
+  <div class="options-section">
+
+    <div class="options-header">
+      <div>
+        <h4>Options</h4>
+        <p>
+          The first option is the most preferred.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="secondary-button"
+        (click)="addOption()"
+      >
+        + Add Option
+      </button>
+    </div>
+
+    @if (sortedOptions.length === 0) {
+
+      <div class="info-box">
+        <strong>No options configured</strong>
+        <p>Add at least two options.</p>
+      </div>
+
+    } @else {
+
+      <div class="options-list">
+
+        @for (
+          option of sortedOptions;
+          track $index;
+          let i = $index
+        ) {
+
+          <div class="option-row">
+
+            <div class="rank-number">
+              {{ i + 1 }}
+            </div>
+
+            <div class="option-field">
+              <label>Option</label>
+
+              <input
+                type="text"
+                [value]="option.value"
+                (input)="updateOption(i, $event)"
+                placeholder="e.g. Apple"
+              />
+            </div>
+
+            <button
+              type="button"
+              class="delete-button"
+              (click)="removeOption(i)"
+            >
+              Remove
+            </button>
+
+          </div>
+        }
+
+      </div>
+    }
+
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <div class="configuration-actions">
+
+    <button
+      type="button"
+      class="secondary-button"
+      (click)="closeConfiguration()"
+    >
+      Cancel
+    </button>
+
+    <button
+      type="button"
+      class="primary-button"
+      [disabled]="isSaving"
+      (click)="save()"
+    >
+      {{ isSaving ? 'Saving...' : 'Save Options' }}
+    </button>
+
+  </div>
+
+</div>
