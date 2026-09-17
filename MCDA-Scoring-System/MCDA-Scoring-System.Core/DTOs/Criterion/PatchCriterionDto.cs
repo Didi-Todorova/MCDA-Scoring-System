@@ -7,6 +7,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.DTOs.Criterion
         int? DecisionId,
         string? Name,
         CriterionType? CriterionType,
+        string? Unit,
         decimal? Weight
     );
 }

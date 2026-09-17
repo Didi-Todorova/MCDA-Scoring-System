@@ -254,46 +254,70 @@ export class CriteriaComponent implements OnInit {
     });
   }
 
-  deleteCriterion(criterion: Criterion): void {
-    const confirmed =
-      window.confirm(`Delete "${criterion.name}"?`);
+  criterionToDelete: Criterion | null = null;
 
-    if (!confirmed) {
-      return;
-    }
+confirmDeleteCriterion(criterion: Criterion): void {
+  this.criterionToDelete = criterion;
+  this.errorMessage = '';
+  this.changeDetector.markForCheck();
+}
 
-    this.criterionService.deleteCriterion(criterion.id).subscribe({
-      next: () => {
-        this.criteria = this.criteria.filter(
-          criterionItem => criterionItem.id !== criterion.id
-        );
+cancelDeleteCriterion(): void {
+  this.criterionToDelete = null;
+  this.changeDetector.markForCheck();
+}
 
-        this.numericalRules =
-          this.numericalRules.filter(
-            rule => rule.criterionId !== criterion.id
-          );
-
-          this.categoricalOptions =
-            this.categoricalOptions.filter(
-                option => option.criterionId !== criterion.id
-        );
-
-        if (this.configuringCriterionId === criterion.id) {
-          this.configuringCriterionId = null;
-        }
-
-        this.changeDetector.markForCheck();
-      },
-      error: (error) => {
-        console.error('Failed to delete criterion', error);
-
-        this.errorMessage =
-          'Unable to delete the criterion.';
-
-        this.changeDetector.markForCheck();
-      }
-    });
+deleteCriterion(): void {
+  if (!this.criterionToDelete) {
+    return;
   }
+
+  const criterion = this.criterionToDelete;
+
+  this.isSaving = true;
+  this.errorMessage = '';
+
+  this.criterionService.deleteCriterion(criterion.id).subscribe({
+    next: () => {
+      this.criteria = this.criteria.filter(
+        item => item.id !== criterion.id
+      );
+
+      this.numericalRules =
+        this.numericalRules.filter(
+          rule => rule.criterionId !== criterion.id
+        );
+
+      this.categoricalOptions =
+        this.categoricalOptions.filter(
+          option => option.criterionId !== criterion.id
+        );
+
+      if (this.configuringCriterionId === criterion.id) {
+        this.configuringCriterionId = null;
+      }
+
+      this.criterionToDelete = null;
+      this.isSaving = false;
+
+      this.changeDetector.markForCheck();
+    },
+
+    error: (error) => {
+      console.error(
+        'Failed to delete criterion',
+        error
+      );
+
+      this.errorMessage =
+        error?.error?.Error ??
+        'Unable to delete the criterion. Please try again.';
+
+      this.isSaving = false;
+      this.changeDetector.markForCheck();
+    }
+  });
+}
 
     configureCriterion(criterion: Criterion): void {
     this.errorMessage = '';

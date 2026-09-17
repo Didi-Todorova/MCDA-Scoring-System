@@ -18,6 +18,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Infrastructure.Data.Entities
 
         [Required]
         public CriterionType CriterionType { get; set; }
+        public string? Unit { get; set; }
         public decimal? Weight { get; set; }
         public ICollection<AlternativeValue> AlternativeValues { get; set; } = new List<AlternativeValue>();
         public ICollection<CriterionOption> CriterionOptions { get; set; } = new List<CriterionOption>();

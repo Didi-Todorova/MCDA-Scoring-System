@@ -104,9 +104,9 @@
               <button
                 type="button"
                 class="delete-button"
-                (click)="deleteCriterion(criterion)">
+                (click)="confirmDeleteCriterion(criterion)">
                 Delete
-              </button>
+            </button>
 
             </div>
 
@@ -237,5 +237,39 @@
     </div>
 
   }
+
+  @if (criterionToDelete) {
+  <div class="confirmation-overlay">
+    <div class="confirmation-dialog">
+      <div class="confirmation-icon">!</div>
+
+      <h3>Delete criterion?</h3>
+
+      <p>
+        Are you sure you want to delete
+        <strong>{{ criterionToDelete.name }}</strong>?
+        This action cannot be undone.
+      </p>
+
+      <div class="confirmation-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cancelDeleteCriterion()"
+          [disabled]="isSaving">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="danger-button"
+          (click)="deleteCriterion()"
+          [disabled]="isSaving">
+          {{ isSaving ? 'Deleting...' : 'Delete Criterion' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 </div>

@@ -3,11 +3,190 @@
 
   <h2>Alternatives</h2>
 
-  <p>
-    Add the alternatives you want to compare and enter their criterion values.
+  <p class="intro">
+    Add the alternatives you want to compare. Their criterion values
+    will be entered in the next part of this step.
   </p>
 
-  <div class="placeholder">
-    Alternative creation and value entry will be added here.
+  @if (isLoading) {
+    <div class="loading-message">
+      Loading alternatives...
+    </div>
+  } @else {
+
+    <div class="section-header">
+      <div>
+        <h3>Your alternatives</h3>
+        <span class="count-label">
+          {{ alternatives.length }}
+          {{ alternatives.length === 1 ? 'alternative' : 'alternatives' }}
+        </span>
+      </div>
+
+      @if (!showForm) {
+        <button
+          type="button"
+          class="primary-button"
+          (click)="openForm()">
+          + Add Alternative
+        </button>
+      }
+    </div>
+
+    @if (errorMessage) {
+      <div class="error-message">
+        {{ errorMessage }}
+      </div>
+    }
+
+    @if (alternatives.length === 0 && !showForm) {
+      <div class="empty-state">
+        <div class="empty-icon">+</div>
+        <h3>No alternatives yet</h3>
+        <p>
+          Add at least one alternative to begin comparing your options.
+        </p>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="openForm()">
+          Add Your First Alternative
+        </button>
+      </div>
+    } @else {
+      <div class="alternative-list">
+        @for (alternative of alternatives; track alternative.id) {
+          <div class="alternative-card">
+            <div class="alternative-number">
+              {{ $index + 1 }}
+            </div>
+
+            <div class="alternative-info">
+              <strong>{{ alternative.name }}</strong>
+              <span>Alternative</span>
+            </div>
+
+            <button
+                type="button"
+                class="delete-button"
+                (click)="confirmDeleteAlternative(alternative)">
+                Delete
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    @if (showForm) {
+      <div class="form-card">
+        <div class="form-header">
+          <div>
+            <span class="form-label">New alternative</span>
+            <h3>Add an alternative</h3>
+          </div>
+
+          <button
+            type="button"
+            class="close-button"
+            (click)="cancelForm()">
+            ×
+          </button>
+        </div>
+
+        <form
+          [formGroup]="alternativeForm"
+          (ngSubmit)="addAlternative()">
+
+          <div class="form-group">
+            <label for="alternativeName">
+              Alternative name
+            </label>
+
+            <input
+              id="alternativeName"
+              type="text"
+              formControlName="name"
+              placeholder="e.g. MacBook Pro"
+              maxlength="200" />
+
+            @if (
+              alternativeForm.controls.name.invalid &&
+              alternativeForm.controls.name.touched
+            ) {
+              <small class="field-error">
+                Please enter an alternative name.
+              </small>
+            }
+          </div>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="cancelForm()">
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              class="primary-button"
+              [disabled]="isSaving">
+              {{ isSaving ? 'Adding...' : 'Add Alternative' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <div class="step-actions">
+      <button
+        type="button"
+        class="secondary-button"
+        routerLink="../weighting">
+        Back
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        routerLink="../preview"
+        [disabled]="alternatives.length === 0">
+        Continue to Preview
+      </button>
+    </div>
+    @if (alternativeToDelete) {
+  <div class="confirmation-overlay">
+    <div class="confirmation-dialog">
+      <div class="confirmation-icon">!</div>
+
+      <h3>Delete alternative?</h3>
+
+      <p>
+        Are you sure you want to delete
+        <strong>{{ alternativeToDelete.name }}</strong>?
+        This action cannot be undone.
+      </p>
+
+      <div class="confirmation-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cancelDelete()"
+          [disabled]="isSaving">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="danger-button"
+          (click)="deleteAlternative()"
+          [disabled]="isSaving">
+          {{ isSaving ? 'Deleting...' : 'Delete Alternative' }}
+        </button>
+      </div>
+    </div>
   </div>
+}
+  }
 </div>

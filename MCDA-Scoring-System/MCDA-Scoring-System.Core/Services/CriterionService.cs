@@ -37,6 +37,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 DecisionId = dto.DecisionId,
                 Name = dto.Name.Trim(),
                 CriterionType = dto.CriterionType,
+                Unit = dto.Unit?.Trim(),
                 Weight = dto.Weight
             };
 
@@ -48,6 +49,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 criterion.DecisionId,
                 criterion.Name,
                 criterion.CriterionType,
+                criterion.Unit,
                 criterion.Weight
             );
         }
@@ -74,6 +76,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     c.DecisionId,
                     c.Name,
                     c.CriterionType,
+                    c.Unit,
                     c.Weight
                 ))
                 .ToListAsync();
@@ -89,6 +92,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     c.DecisionId,
                     c.Name,
                     c.CriterionType,
+                    c.Unit,
                     c.Weight
                 ))
                 .FirstOrDefaultAsync();
@@ -115,6 +119,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
             var criterionType =
                 dto.CriterionType ?? criterion.CriterionType;
+
+            var unit =
+                dto.Unit ?? criterion.Unit;
 
             var weight =
                 dto.Weight ?? criterion.Weight;
@@ -155,6 +162,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             }
 
             criterion.Name = name.Trim();
+            criterion.Unit = string.IsNullOrWhiteSpace(unit)
+                ? null
+                : unit.Trim();
             criterion.Weight = weight;
 
             await _repo.SaveChangesAsync();
@@ -204,6 +214,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             criterion.DecisionId = dto.DecisionId;
             criterion.Name = dto.Name.Trim();
             criterion.CriterionType = dto.CriterionType;
+            criterion.Unit = string.IsNullOrWhiteSpace(dto.Unit)
+                ? null
+                : dto.Unit.Trim();
             criterion.Weight = dto.Weight;
 
             await _repo.SaveChangesAsync();
