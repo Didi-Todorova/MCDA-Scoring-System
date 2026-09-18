@@ -81,9 +81,10 @@ export class CriteriaComponent implements OnInit {
   configuringCriterionId: number | null = null;
 
   readonly criterionForm = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required, Validators.maxLength(200)]],
-    criterionType: [CriterionType.Numerical, Validators.required]
-  });
+  name: ['', [Validators.required, Validators.maxLength(200)]],
+  criterionType: [CriterionType.Numerical, Validators.required],
+  unit: ['', [Validators.maxLength(50)]]
+});
 
 
 
@@ -196,15 +197,16 @@ export class CriteriaComponent implements OnInit {
   });
 }
 
-  openForm(): void {
+    openForm(): void {
     this.criterionForm.reset({
-      name: '',
-      criterionType: CriterionType.Numerical
+        name: '',
+        criterionType: CriterionType.Numerical,
+        unit: ''
     });
 
     this.errorMessage = '';
     this.showForm = true;
-  }
+    }
 
   cancelForm(): void {
     this.showForm = false;
@@ -225,14 +227,20 @@ export class CriteriaComponent implements OnInit {
 
     const formValue = this.criterionForm.getRawValue();
 
+    const unit =
+        formValue.criterionType === CriterionType.Numerical
+            ? formValue.unit.trim() || null
+            : null;
+
     this.isSaving = true;
     this.errorMessage = '';
 
     this.criterionService.createCriterion({
-      decisionId,
-      name: formValue.name.trim(),
-      criterionType: formValue.criterionType,
-      weight: 0
+        decisionId,
+        name: formValue.name.trim(),
+        criterionType: formValue.criterionType,
+        unit,
+        weight: 0
     }).subscribe({
       next: (criterion) => {
         this.criteria = [...this.criteria, criterion];

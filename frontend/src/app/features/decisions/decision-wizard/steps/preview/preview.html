@@ -1,13 +1,210 @@
 <div class="step-content">
+
   <span class="step-label">Step 5</span>
 
-  <h2>Preview</h2>
+  <div class="step-header">
+    <div>
+      <h2>Preview</h2>
 
-  <p>
-    Review your decision before calculating the final results.
-  </p>
-
-  <div class="placeholder">
-    Decision preview will be added here.
+      <p class="intro">
+        Review your alternatives and their values before
+        calculating the final scores.
+      </p>
+    </div>
   </div>
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (isLoading) {
+
+    <div class="loading-message">
+      Loading preview...
+    </div>
+
+  } @else {
+
+    @if (
+      alternatives.length === 0 ||
+      criteria.length === 0
+    ) {
+
+      <div class="empty-state">
+
+        <div class="empty-icon">!</div>
+
+        <h3>Nothing to preview yet</h3>
+
+        <p>
+          Add at least one alternative and criterion
+          before continuing.
+        </p>
+
+      </div>
+
+    } @else {
+
+      <div class="preview-card">
+
+        <div class="preview-card-header">
+
+          <div>
+            <span class="preview-label">
+              Decision overview
+            </span>
+
+            <h3>Comparison matrix</h3>
+          </div>
+
+          <span class="read-only-badge">
+            Read only
+          </span>
+
+        </div>
+
+        <div class="table-wrapper">
+
+          <table class="preview-table">
+
+            <thead>
+              <tr>
+
+                <th class="criterion-column">
+                  Criterion
+                </th>
+
+                @for (
+                  alternative of alternatives;
+                  track alternative.id
+                ) {
+
+                  <th>
+                    {{ alternative.name }}
+                  </th>
+
+                }
+
+              </tr>
+            </thead>
+
+            <tbody>
+
+              @for (
+                criterion of criteria;
+                track criterion.id
+              ) {
+
+                <tr>
+
+                  <td class="criterion-cell">
+
+                    <div class="criterion-name">
+                      {{ criterion.name }}
+                    </div>
+
+                    <div class="criterion-meta">
+
+                      <span>
+                        {{
+                          criterion.criterionType ===
+                          CriterionType.Numerical
+                            ? 'Numerical'
+                            : 'Categorical'
+                        }}
+                      </span>
+
+                      @if (
+                        criterion.unit &&
+                        criterion.criterionType ===
+                        CriterionType.Numerical
+                      ) {
+
+                        <span>
+                          {{ criterion.unit }}
+                        </span>
+
+                      }
+
+                    </div>
+
+                  </td>
+
+                  @for (
+                    alternative of alternatives;
+                    track alternative.id
+                  ) {
+
+                    <td
+                      [class.missing-value]="
+                        formatCriterionValue(
+                          alternative,
+                          criterion
+                        ) === 'Not entered'
+                      "
+                    >
+
+                      {{
+                        formatCriterionValue(
+                          alternative,
+                          criterion
+                        )
+                      }}
+
+                    </td>
+
+                  }
+
+                </tr>
+
+              }
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+      <div class="preview-note">
+
+        <span class="note-icon">i</span>
+
+        <p>
+          This preview shows the values you entered.
+          The final scores will be calculated using the
+          selected weighting method and criterion rules.
+        </p>
+
+      </div>
+
+    }
+
+    <div class="step-actions">
+
+      <button
+        type="button"
+        class="secondary-button"
+        routerLink="../alternatives">
+        Back to Alternatives
+      </button>
+
+      <button
+        type="button"
+        class="primary-button"
+        routerLink="../results"
+        [disabled]="
+          alternatives.length === 0 ||
+          criteria.length === 0
+        ">
+        Calculate Results
+      </button>
+
+    </div>
+
+  }
+
 </div>

@@ -1,50 +1,42 @@
 <div class="step-content">
+
   <span class="step-label">Step 4</span>
 
-  <h2>Alternatives</h2>
+  <div class="step-header">
+    <div>
+      <h2>Alternatives & Values</h2>
 
-  <p class="intro">
-    Add the alternatives you want to compare. Their criterion values
-    will be entered in the next part of this step.
-  </p>
+      <p class="intro">
+        Add the alternatives you want to compare and enter their values
+        for each criterion.
+      </p>
+    </div>    
+  </div>
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
 
   @if (isLoading) {
+
     <div class="loading-message">
-      Loading alternatives...
+      Loading alternatives and criteria...
     </div>
+
   } @else {
 
-    <div class="section-header">
-      <div>
-        <h3>Your alternatives</h3>
-        <span class="count-label">
-          {{ alternatives.length }}
-          {{ alternatives.length === 1 ? 'alternative' : 'alternatives' }}
-        </span>
-      </div>
-
-      @if (!showForm) {
-        <button
-          type="button"
-          class="primary-button"
-          (click)="openForm()">
-          + Add Alternative
-        </button>
-      }
-    </div>
-
-    @if (errorMessage) {
-      <div class="error-message">
-        {{ errorMessage }}
-      </div>
-    }
-
     @if (alternatives.length === 0 && !showForm) {
+
       <div class="empty-state">
+
         <div class="empty-icon">+</div>
+
         <h3>No alternatives yet</h3>
+
         <p>
-          Add at least one alternative to begin comparing your options.
+          Add at least one alternative to begin entering values.
         </p>
 
         <button
@@ -53,36 +45,236 @@
           (click)="openForm()">
           Add Your First Alternative
         </button>
+
       </div>
+
     } @else {
+
       <div class="alternative-list">
-        @for (alternative of alternatives; track alternative.id) {
+
+        @for (
+          alternative of alternatives;
+          track alternative.id;
+          let alternativeIndex = $index
+        ) {
+
           <div class="alternative-card">
-            <div class="alternative-number">
-              {{ $index + 1 }}
-            </div>
 
-            <div class="alternative-info">
-              <strong>{{ alternative.name }}</strong>
-              <span>Alternative</span>
-            </div>
+            <div class="alternative-header">
 
-            <button
+              <div class="alternative-title">
+
+                <div class="alternative-number">
+                  {{ alternativeIndex + 1 }}
+                </div>
+
+                <div>
+                  <h3>{{ alternative.name }}</h3>
+
+                  <span>
+                    Enter values for this alternative
+                  </span>
+                </div>
+
+              </div>
+
+              <button
                 type="button"
                 class="delete-button"
                 (click)="confirmDeleteAlternative(alternative)">
                 Delete
-            </button>
+              </button>
+
+            </div>
+
+
+            <div class="criterion-values">
+
+              @for (
+                criterion of criteria;
+                track criterion.id
+              ) {
+
+                <div class="criterion-value-row">
+
+                  <div class="criterion-value-info">
+
+                    <div class="criterion-value-name">
+                      {{ criterion.name }}
+                    </div>
+
+                    <span class="criterion-type">
+                      {{ criterion.criterionType === CriterionType.Numerical
+                        ? 'Numerical'
+                        : 'Categorical' }}
+                    </span>
+
+                  </div>
+
+
+                  <div class="criterion-value-input">
+
+                    @if (
+                      criterion.criterionType ===
+                      CriterionType.Numerical
+                    ) {
+
+                      @if (
+                        getNumericalRule(criterion.id);
+                        as rule
+                      ) {
+
+                        <div class="numeric-input-wrapper">
+
+                          <input
+                            type="number"
+                            [value]="getNumericValue(
+                              alternative.id,
+                              criterion.id
+                            ) ?? ''"
+                            [attr.min]="rule.minValue"
+                            [attr.max]="rule.maxValue"
+                            placeholder="Enter value" 
+                            (blur)="saveNumericValue(
+                            alternative.id,
+                            criterion.id,
+                            $event
+                          )"/>
+
+                          @if (getCriterionUnit(criterion)) {
+                            <span class="unit-label">
+                              {{ getCriterionUnit(criterion) }}
+                            </span>
+                          }
+
+                        </div>
+                        
+                          @if (
+                            savedValueKey ===
+                            getValueKey(alternative.id, criterion.id)
+                          ) {
+                            <span class="saved-indicator">
+                              ✓ Saved
+                            </span>
+                          }
+
+                        <div class="criterion-help">
+
+                          <span>
+                            Acceptable range:
+                            {{ rule.minValue }}
+                            –
+                            {{ rule.maxValue }}
+                            @if (getCriterionUnit(criterion)) {
+                              {{ getCriterionUnit(criterion) }}
+                            }
+                          </span>                        
+
+                          @if (
+                            rule.numericType ===
+                            NumericType.Scope
+                          ) {
+
+                            <span>
+                              {{ getDirectionText(rule.direction) }}
+                            </span>
+
+                          }
+
+                        </div>
+
+                      } @else {
+
+                        <div class="not-configured">
+                          Numerical criterion not configured
+                        </div>
+
+                      }
+
+                    } @else {
+
+                      @if (getCategoricalOptions(criterion.id).length > 0) {
+
+                        <select
+                          [value]="getCategoricalOptionId(
+                            alternative.id,
+                            criterion.id
+                          ) ?? ''"
+                          (change)="saveCategoricalValue(
+                            alternative.id,
+                            criterion.id,
+                            $event
+                          )">
+
+                          <option value="">
+                            Select an option
+                          </option>
+
+                          @for (
+                            option of getCategoricalOptions(
+                              criterion.id
+                            );
+                            track option.id
+                          ) {
+
+                            <option
+                              [value]="option.id">
+
+                              {{ option.value }}
+
+                            </option>
+
+                          }
+
+                        </select>
+
+                        @if (
+                          savedValueKey ===
+                          getValueKey(alternative.id, criterion.id)
+                        ) {
+                          <span class="saved-indicator">
+                            ✓ Saved
+                          </span>
+                        }
+
+                      } @else {
+
+                        <div class="not-configured">
+                          No options configured for this criterion.
+                        </div>
+
+                      }
+
+                    }
+
+                  </div>
+
+                </div>
+
+              }
+
+            </div>
+
           </div>
+
         }
+
       </div>
+
     }
 
+
     @if (showForm) {
+
       <div class="form-card">
+
         <div class="form-header">
+
           <div>
-            <span class="form-label">New alternative</span>
+            <span class="form-label">
+              New alternative
+            </span>
+
             <h3>Add an alternative</h3>
           </div>
 
@@ -92,13 +284,16 @@
             (click)="cancelForm()">
             ×
           </button>
+
         </div>
+
 
         <form
           [formGroup]="alternativeForm"
           (ngSubmit)="addAlternative()">
 
           <div class="form-group">
+
             <label for="alternativeName">
               Alternative name
             </label>
@@ -114,13 +309,18 @@
               alternativeForm.controls.name.invalid &&
               alternativeForm.controls.name.touched
             ) {
+
               <small class="field-error">
                 Please enter an alternative name.
               </small>
+
             }
+
           </div>
 
+
           <div class="form-actions">
+
             <button
               type="button"
               class="secondary-button"
@@ -134,12 +334,31 @@
               [disabled]="isSaving">
               {{ isSaving ? 'Adding...' : 'Add Alternative' }}
             </button>
+
           </div>
+
         </form>
+
       </div>
+
     }
 
+
+    <div class="alternative-actions">
+
+      @if (!showForm) {
+        <button
+          type="button"
+          class="primary-button"
+          (click)="openForm()">
+          + Add Alternative
+        </button>
+      }
+
+    </div>
+
     <div class="step-actions">
+
       <button
         type="button"
         class="secondary-button"
@@ -154,11 +373,23 @@
         [disabled]="alternatives.length === 0">
         Continue to Preview
       </button>
+
     </div>
-    @if (alternativeToDelete) {
+
+  }
+
+</div>
+
+
+@if (alternativeToDelete) {
+
   <div class="confirmation-overlay">
+
     <div class="confirmation-dialog">
-      <div class="confirmation-icon">!</div>
+
+      <div class="confirmation-icon">
+        !
+      </div>
 
       <h3>Delete alternative?</h3>
 
@@ -169,6 +400,7 @@
       </p>
 
       <div class="confirmation-actions">
+
         <button
           type="button"
           class="secondary-button"
@@ -184,9 +416,11 @@
           [disabled]="isSaving">
           {{ isSaving ? 'Deleting...' : 'Delete Alternative' }}
         </button>
+
       </div>
+
     </div>
+
   </div>
+
 }
-  }
-</div>

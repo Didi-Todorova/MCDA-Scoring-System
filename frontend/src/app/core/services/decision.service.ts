@@ -4,6 +4,10 @@ import { Observable } from 'rxjs';
 
 import { Decision, WeightingMethod } from '../models/decision.model';
 
+import {
+  DecisionScore
+} from '../models/decision-score.model';
+
 export interface CreateDecisionRequest {
   name: string;
   weightingMethod: WeightingMethod;
@@ -48,5 +52,13 @@ export class DecisionService {
 
   deleteDecision(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  getDecisionScore(
+    decisionId: number
+  ): Observable<DecisionScore[]> {
+    return this.http.get<DecisionScore[]>(
+      `${this.apiUrl}/${decisionId}/score`
+    );
   }
 }

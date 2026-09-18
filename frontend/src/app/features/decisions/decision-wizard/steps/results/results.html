@@ -1,13 +1,222 @@
 <div class="step-content">
-  <span class="step-label">Step 6</span>
 
-  <h2>Results</h2>
+  <span class="step-label">
+    Step 6
+  </span>
 
-  <p>
-    Calculate and review the scores for your alternatives.
-  </p>
+  <div class="step-header">
 
-  <div class="placeholder">
-    Final scoring results will be added here.
+    <div>
+      <h2>Results</h2>
+
+      <p class="intro">
+        Your alternatives have been evaluated using the
+        criteria, values, and weighting method you selected.
+      </p>
+    </div>
+
   </div>
+
+  @if (errorMessage) {
+
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+  @if (isLoading) {
+
+    <div class="loading-message">
+
+      <div class="loading-spinner"></div>
+
+      <span>
+        Calculating results...
+      </span>
+
+    </div>
+
+  } @else if (results.length === 0) {
+
+    <div class="empty-state">
+
+      <div class="empty-icon">
+        !
+      </div>
+
+      <h3>
+        No results available
+      </h3>
+
+      <p>
+        There are currently no alternatives to evaluate.
+      </p>
+
+    </div>
+
+  } @else {
+
+    <div class="result-summary">
+
+      <div class="summary-icon">
+        ✓
+      </div>
+
+      <div>
+
+        <span class="summary-label">
+          Evaluation complete
+        </span>
+
+        <h3>
+          {{ results.length }}
+          {{ results.length === 1
+            ? 'alternative'
+            : 'alternatives' }}
+          evaluated
+        </h3>
+
+      </div>
+
+    </div>
+
+    <div class="results-card">
+
+      <div class="results-card-header">
+
+        <div>
+
+          <span class="results-label">
+            Final ranking
+          </span>
+
+          <h3>
+            Alternative scores
+          </h3>
+
+        </div>
+
+        <span class="backend-badge">
+          Calculated by MCDA
+        </span>
+
+      </div>
+
+      <div class="results-list">
+
+        @for (
+          result of results;
+          track result.id;
+          let resultIndex = $index
+        ) {
+
+          <div
+            class="result-row"
+            [class.top-result]="resultIndex === 0">
+
+            <div class="rank">
+
+              @if (resultIndex === 0) {
+
+                <span class="rank-medal">
+                  1
+                </span>
+
+              } @else {
+
+                <span class="rank-number">
+                  {{ resultIndex + 1 }}
+                </span>
+
+              }
+
+            </div>
+
+            <div class="result-main">
+
+              <div class="result-name-row">
+
+                <span class="result-name">
+                  {{ result.name }}
+                </span>
+
+                @if (resultIndex === 0) {
+
+                  <span class="top-badge">
+                    Highest score
+                  </span>
+
+                }
+
+              </div>
+
+              <div class="score-bar">
+
+                <div
+                  class="score-bar-fill"
+                  [style.width.%]="
+                    getScorePercentage(result.score)
+                  ">
+                </div>
+
+              </div>
+
+            </div>
+
+            <div class="result-score">
+
+              <span class="score-value">
+                {{ result.score | number:'1.2-2' }}
+              </span>
+
+              <span class="score-label">
+                Score
+              </span>
+
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+    </div>
+
+    <div class="results-note">
+
+      <span class="note-icon">
+        i
+      </span>
+
+      <p>
+        Scores are calculated by the MCDA backend using
+        the configured criterion rules and weights.
+        The alternatives are displayed in descending
+        score order.
+      </p>
+
+    </div>
+
+  }
+
+  <div class="step-actions">
+
+    <button
+      type="button"
+      class="secondary-button"
+      routerLink="../preview">
+      Back to Preview
+    </button>
+
+    <button
+      type="button"
+      class="primary-button"
+      routerLink="/decisions">
+      Back to Decisions
+    </button>
+
+  </div>
+
 </div>

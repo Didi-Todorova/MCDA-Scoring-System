@@ -212,6 +212,29 @@
 
         </div>
 
+        @if (criterionForm.controls.criterionType.value === CriterionType.Numerical) {
+
+        <div class="form-group">
+
+            <label for="criterionUnit">
+            Unit
+            </label>
+
+            <input
+            id="criterionUnit"
+            type="text"
+            formControlName="unit"
+            maxlength="50"
+            placeholder="e.g. USD, kg, GB, hours" />
+
+            <small class="field-hint">
+            Optional. Use a unit that describes the numerical value.
+            </small>
+
+        </div>
+
+        }
+
         <div class="configuration-actions">
 
           <button

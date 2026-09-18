@@ -481,3 +481,9 @@
     width: 100%;
   }
 }
+
+.field-hint {
+  color: #87958f;
+  font-size: 12px;
+  line-height: 1.4;
+}

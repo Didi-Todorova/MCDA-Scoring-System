@@ -8,6 +8,7 @@ export interface Criterion {
   decisionId: number;
   name: string;
   criterionType: CriterionType;
+  unit: string | null;
   weight: number | null;
 }
 
@@ -15,5 +16,6 @@ export interface CreateCriterionRequest {
   decisionId: number;
   name: string;
   criterionType: CriterionType;
+  unit: string | null;
   weight: number | null;
 }
