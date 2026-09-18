@@ -37,15 +37,15 @@ export class CriterionService {
     );
   }
 
-  updateCriterion( 
-    id: number, 
-    request: UpdateCriterionRequest 
-  ): Observable<Criterion> { 
-    return this.http.put<Criterion>( 
-      `${this.apiUrl}/${id}`, 
-      request 
-    ); 
-  }
+  updateCriterion(
+  id: number,
+  request: UpdateCriterionRequest
+): Observable<void> {
+  return this.http.put<void>(
+    `${this.apiUrl}/${id}`,
+    request
+  );
+}
 
   deleteCriterion(id: number): Observable<void> {
     return this.http.delete<void>(

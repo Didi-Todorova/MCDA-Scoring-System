@@ -7,21 +7,9 @@
         Define the criteria that will be used to evaluate the alternatives.
       </p>
     </div>
-
-    <button
-      type="button"
-      class="primary-button"
-      (click)="openForm()"
-      [disabled]="showForm">
-      + Add Criterion
-    </button>
   </div>
 
-  @if (errorMessage) {
-    <div class="error-message">
-      {{ errorMessage }}
-    </div>
-  }
+ 
 
   @if (isLoading) {
     <div class="loading-state">
@@ -29,7 +17,7 @@
     </div>
   }
 
-  @if (!isLoading && criteria.length === 0) {
+  @if (!isLoading && criteria.length === 0 && !showForm) {
     <div class="empty-state">
       <h3>No criteria yet</h3>
       <p>
@@ -97,16 +85,18 @@
               <button
                 type="button"
                 class="secondary-button"
-                (click)="configureCriterion(criterion)">
+                (click)="configureCriterion(criterion)"
+                [disabled]="isSaving">
                 Configure
               </button>
 
               <button
                 type="button"
                 class="delete-button"
-                (click)="confirmDeleteCriterion(criterion)">
+                (click)="confirmDeleteCriterion(criterion)"
+                [disabled]="isSaving">
                 Delete
-            </button>
+              </button>
 
             </div>
 
@@ -116,35 +106,428 @@
 
             <div class="configuration-panel">
 
-                @if (criterion.criterionType === CriterionType.Numerical) {
+              <div class="configuration-header">
 
-                <app-numerical-configuration
-                    [criterion]="criterion"
-                    [existingRule]="getNumericalRule(criterion.id)"
-                    (close)="closeConfiguration()"
-                    (ruleSaved)="onNumericalRuleSaved($event)"
-                ></app-numerical-configuration>
+                <div>
+                  <h3>Configure Criterion</h3>
+                  <p>
+                    Edit the criterion information and evaluation rules.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="close-button"
+                  (click)="closeConfiguration()"
+                  [disabled]="isSaving">
+                  ×
+                </button>
+
+              </div>
+
+              <form
+                [formGroup]="criterionForm"
+                (ngSubmit)="saveConfiguration()">
+
+                <div class="form-group">
+
+                  <label for="configuredCriterionName">
+                    Criterion name
+                  </label>
+
+                  <input
+                    id="configuredCriterionName"
+                    type="text"
+                    formControlName="name"
+                    placeholder="e.g. Price, Performance, Brand" />
+
+                </div>
+
+                <div class="form-group">
+
+                  <label for="configuredCriterionType">
+                    Criterion type
+                  </label>
+
+                  <select
+                    id="configuredCriterionType"
+                    formControlName="criterionType"
+                    (change)="onCriterionTypeChanged()">
+
+                    <option [ngValue]="CriterionType.Numerical">
+                      Numerical
+                    </option>
+
+                    <option [ngValue]="CriterionType.Categorical">
+                      Categorical
+                    </option>
+
+                  </select>
+
+                </div>
+
+                @if (
+                  criterionForm.controls.criterionType.value ===
+                  CriterionType.Numerical
+                ) {
+
+                  <div class="form-group">
+
+                    <label for="configuredCriterionUnit">
+                      Unit
+                    </label>
+
+                    <input
+                      id="configuredCriterionUnit"
+                      type="text"
+                      formControlName="unit"
+                      maxlength="50"
+                      placeholder="e.g. USD, GB, kg, hours" />
+
+                  </div>
+
+                  <div class="form-group">
+
+                    <label for="configuredNumericType">
+                      Evaluation type
+                    </label>
+
+                    <select
+                      id="configuredNumericType"
+                      formControlName="numericType"
+                      (change)="onNumericTypeChanged()">
+
+                      <option [ngValue]="NumericType.Scope">
+                        Scope
+                      </option>
+
+                      <option [ngValue]="NumericType.Interval">
+                        Interval
+                      </option>
+
+                      <option [ngValue]="NumericType.TargetValue">
+                        Target Value
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                  <div class="form-row">
+
+                    <div class="form-group">
+
+                      <label for="configuredMinValue">
+                        Minimum value
+                      </label>
+
+                      <input
+                        id="configuredMinValue"
+                        type="number"
+                        formControlName="minValue" />
+
+                    </div>
+
+                    <div class="form-group">
+
+                      <label for="configuredMaxValue">
+                        Maximum value
+                      </label>
+
+                      <input
+                        id="configuredMaxValue"
+                        type="number"
+                        formControlName="maxValue" />
+
+                    </div>
+
+                  </div>
+
+                  @if (
+                    criterionForm.controls.numericType.value ===
+                    NumericType.Scope
+                  ) {
+
+                    <div class="form-group">
+
+                      <label for="configuredDirection">
+                        Direction
+                      </label>
+
+                      <select
+                        id="configuredDirection"
+                        formControlName="direction">
+
+                        <option [ngValue]="Direction.Minimize">
+                          Minimize
+                        </option>
+
+                        <option [ngValue]="Direction.Maximize">
+                          Maximize
+                        </option>
+
+                      </select>
+
+                    </div>
+
+                  }
+
+                  @if (
+                    criterionForm.controls.numericType.value ===
+                    NumericType.TargetValue
+                  ) {
+
+                    <div class="form-group">
+
+                      <label for="configuredTargetValue">
+                        Target value
+                      </label>
+
+                      <input
+                        id="configuredTargetValue"
+                        type="number"
+                        formControlName="targetValue" />
+
+                    </div>
+
+                  }
+
+                  @if (
+                    criterionForm.controls.numericType.value ===
+                    NumericType.Interval
+                  ) {
+
+                    <div class="interval-section">
+
+                      <div class="interval-header">
+
+                        <div>
+                          <h4>Evaluation ranges</h4>
+                          <p>
+                            Define the value ranges and their preference order.
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          class="secondary-button"
+                          (click)="addIntervalRange()">
+                          + Add Range
+                        </button>
+
+                      </div>
+
+                      @if (newIntervalRanges.length === 0) {
+
+                        <div class="info-box">
+                          <strong>No ranges configured.</strong>
+                          <p>
+                            Add at least two ranges.
+                          </p>
+                        </div>
+
+                      }
+
+                      <div class="interval-list">
+
+                        @for (
+                          range of newIntervalRanges;
+                          track $index;
+                          let i = $index
+                        ) {
+                          <div
+                            class="interval-row"
+                            draggable="true"
+                            (dragstart)="onIntervalDragStart(i)"
+                            (dragover)="onIntervalDragOver($event)"
+                            (drop)="onIntervalDrop(i)"
+                            (dragend)="onIntervalDragEnd()">
+
+                            <button
+                              type="button"
+                              class="drag-handle"
+                              title="Drag to reorder"
+                              aria-label="Drag to reorder interval">
+                              ⋮⋮
+                            </button>
+
+                            <div class="interval-field">
+                              <label>Minimum</label>
+
+                              <input
+                                type="number"
+                                [value]="range.minValue"
+                                (input)="updateNewIntervalMin(i, $event)" />
+                            </div>
+
+                            <div class="interval-field">
+                              <label>Maximum</label>
+
+                              <input
+                                type="number"
+                                [value]="range.maxValue"
+                                (input)="updateNewIntervalMax(i, $event)" />
+                            </div>
+
+                            <div class="interval-actions">
+
+                              <button
+                                type="button"
+                                class="move-button"
+                                [disabled]="i === 0"
+                                (click)="moveIntervalUp(i)"
+                                title="Move up"
+                                aria-label="Move interval up">
+                                ↑
+                              </button>
+
+                              <button
+                                type="button"
+                                class="move-button"
+                                [disabled]="i === newIntervalRanges.length - 1"
+                                (click)="moveIntervalDown(i)"
+                                title="Move down"
+                                aria-label="Move interval down">
+                                ↓
+                              </button>
+
+                              <button
+                                type="button"
+                                class="delete-button"
+                                (click)="removeNewIntervalRange(i)">
+                                Remove
+                              </button>
+
+                            </div>
+                          </div>
+                        }
+
+                      </div>
+
+                    </div>
+
+                  }
 
                 } @else {
 
-                <app-categorical-configuration
-                    [criterionId]="criterion.id"
-                    [criterionName]="criterion.name"
-                    [options]="categoricalOptions"
-                    (close)="closeConfiguration()"
-                    (optionsChanged)="onCategoricalOptionsChanged($event)"
-                ></app-categorical-configuration>
+                  <div class="interval-section">
+
+                    <div class="interval-header">
+
+                      <div>
+                        <h4>Categorical options</h4>
+                        <p>
+                          Define the possible values in preference order.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="secondary-button"
+                        (click)="addCategoricalOption()">
+                        + Add Option
+                      </button>
+
+                    </div>
+
+                    @if (newCategoricalOptions.length === 0) {
+
+                      <div class="info-box">
+                        <strong>No options configured.</strong>
+                        <p>
+                          Add at least two options.
+                        </p>
+                      </div>
+
+                    }
+
+                    <div class="option-list">
+
+                      @for (
+                        option of newCategoricalOptions;
+                        track $index;
+                        let i = $index
+                      ) {
+
+                        <div class="option-row">
+
+                          <div class="rank-number">
+                            {{ i + 1 }}
+                          </div>
+
+                          <input
+                            type="text"
+                            [value]="option"
+                            placeholder="e.g. Excellent"
+                            (input)="updateCategoricalOption(i, $event)" />
+
+                          <button
+                            type="button"
+                            class="delete-button"
+                            (click)="removeCategoricalOption(i)">
+                            Remove
+                          </button>
+
+                        </div>
+
+                      }
+
+                    </div>
+
+                  </div>
 
                 }
 
+                        @if (errorMessage) {
+                        <div class="error-message configuration-error">
+                          {{ errorMessage }}
+                        </div>
+                      }
+
+                      <div class="configuration-actions">
+
+                        <button
+                          type="button"
+                          class="secondary-button"
+                          (click)="closeConfiguration()"
+                          [disabled]="isSaving">
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          class="primary-button"
+                          [disabled]="isSaving">
+
+                          {{ isSaving ? 'Saving...' : 'Save Changes' }}
+
+                        </button>
+
+                      </div>
+
+              </form>
+
             </div>
 
-            }
+          }
 
         </div>
 
       }
 
+    </div>
+
+  }
+
+  @if (!isLoading && !showForm && configuringCriterionId === null) {
+
+    <div class="add-criterion-bottom">
+      <button
+        type="button"
+        class="primary-button"
+        (click)="openForm()">
+        + Add Criterion
+      </button>
     </div>
 
   }
@@ -157,16 +540,16 @@
 
         <div>
           <h3>Add Criterion</h3>
-
           <p>
-            Choose a name and evaluation type for the criterion.
+            Define the criterion and its complete evaluation configuration.
           </p>
         </div>
 
         <button
           type="button"
           class="close-button"
-          (click)="cancelForm()">
+          (click)="cancelForm()"
+          [disabled]="isSaving">
           ×
         </button>
 
@@ -198,7 +581,8 @@
 
           <select
             id="criterionType"
-            formControlName="criterionType">
+            formControlName="criterionType"
+            (change)="onCriterionTypeChanged()">
 
             <option [ngValue]="CriterionType.Numerical">
               Numerical
@@ -212,26 +596,315 @@
 
         </div>
 
-        @if (criterionForm.controls.criterionType.value === CriterionType.Numerical) {
+        @if (
+          criterionForm.controls.criterionType.value ===
+          CriterionType.Numerical
+        ) {
 
-        <div class="form-group">
+          <div class="form-group">
 
             <label for="criterionUnit">
-            Unit
+              Unit
             </label>
 
             <input
-            id="criterionUnit"
-            type="text"
-            formControlName="unit"
-            maxlength="50"
-            placeholder="e.g. USD, kg, GB, hours" />
+              id="criterionUnit"
+              type="text"
+              formControlName="unit"
+              maxlength="50"
+              placeholder="e.g. USD, kg, GB, hours" />
 
-            <small class="field-hint">
-            Optional. Use a unit that describes the numerical value.
-            </small>
+          </div>
 
-        </div>
+          <div class="form-group">
+
+            <label for="numericType">
+              Evaluation type
+            </label>
+
+            <select
+              id="numericType"
+              formControlName="numericType"
+              (change)="onNumericTypeChanged()">
+
+              <option [ngValue]="NumericType.Scope">
+                Scope
+              </option>
+
+              <option [ngValue]="NumericType.Interval">
+                Interval
+              </option>
+
+              <option [ngValue]="NumericType.TargetValue">
+                Target Value
+              </option>
+
+            </select>
+
+          </div>
+
+          <div class="form-row">
+
+            <div class="form-group">
+
+              <label for="minValue">
+                Minimum value
+              </label>
+
+              <input
+                id="minValue"
+                type="number"
+                formControlName="minValue" />
+
+            </div>
+
+            <div class="form-group">
+
+              <label for="maxValue">
+                Maximum value
+              </label>
+
+              <input
+                id="maxValue"
+                type="number"
+                formControlName="maxValue" />
+
+            </div>
+
+          </div>
+
+          @if (
+            criterionForm.controls.numericType.value ===
+            NumericType.Scope
+          ) {
+
+            <div class="form-group">
+
+              <label for="direction">
+                Direction
+              </label>
+
+              <select
+                id="direction"
+                formControlName="direction">
+
+                <option [ngValue]="Direction.Minimize">
+                  Minimize
+                </option>
+
+                <option [ngValue]="Direction.Maximize">
+                  Maximize
+                </option>
+
+              </select>
+
+            </div>
+
+          }
+
+          @if (
+            criterionForm.controls.numericType.value ===
+            NumericType.TargetValue
+          ) {
+
+            <div class="form-group">
+
+              <label for="targetValue">
+                Target value
+              </label>
+
+              <input
+                id="targetValue"
+                type="number"
+                formControlName="targetValue" />
+
+            </div>
+
+          }
+
+          @if (
+            criterionForm.controls.numericType.value ===
+            NumericType.Interval
+          ) {
+
+            <div class="interval-section">
+
+              <div class="interval-header">
+
+                <div>
+                  <h4>Evaluation ranges</h4>
+                  <p>
+                    Define the value ranges and their preference order.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="addIntervalRange()">
+                  + Add Range
+                </button>
+
+              </div>
+
+              @if (newIntervalRanges.length === 0) {
+
+                <div class="info-box">
+                  <strong>No ranges configured.</strong>
+                  <p>
+                    Add at least two ranges.
+                  </p>
+                </div>
+
+              }
+
+              <div class="interval-list">
+
+                @for (
+                  range of newIntervalRanges;
+                  track $index;
+                  let i = $index
+                ) {
+                  <div
+                    class="interval-row"
+                    draggable="true"
+                    (dragstart)="onIntervalDragStart(i)"
+                    (dragover)="onIntervalDragOver($event)"
+                    (drop)="onIntervalDrop(i)"
+                    (dragend)="onIntervalDragEnd()">
+
+                    <button
+                      type="button"
+                      class="drag-handle"
+                      title="Drag to reorder"
+                      aria-label="Drag to reorder interval">
+                      ⋮⋮
+                    </button>
+
+                    <div class="interval-field">
+                      <label>Minimum</label>
+
+                      <input
+                        type="number"
+                        [value]="range.minValue"
+                        (input)="updateNewIntervalMin(i, $event)" />
+                    </div>
+
+                    <div class="interval-field">
+                      <label>Maximum</label>
+
+                      <input
+                        type="number"
+                        [value]="range.maxValue"
+                        (input)="updateNewIntervalMax(i, $event)" />
+                    </div>
+
+                    <div class="interval-actions">
+
+                      <button
+                        type="button"
+                        class="move-button"
+                        [disabled]="i === 0"
+                        (click)="moveIntervalUp(i)"
+                        title="Move up"
+                        aria-label="Move interval up">
+                        ↑
+                      </button>
+
+                      <button
+                        type="button"
+                        class="move-button"
+                        [disabled]="i === newIntervalRanges.length - 1"
+                        (click)="moveIntervalDown(i)"
+                        title="Move down"
+                        aria-label="Move interval down">
+                        ↓
+                      </button>
+
+                      <button
+                        type="button"
+                        class="delete-button"
+                        (click)="removeNewIntervalRange(i)">
+                        Remove
+                      </button>
+
+                    </div>
+                  </div>
+                }
+
+              </div>
+
+            </div>
+
+          }
+
+        } @else {
+
+          <div class="interval-section">
+
+            <div class="interval-header">
+
+              <div>
+                <h4>Categorical options</h4>
+                <p>
+                  Define the possible values in preference order.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="addCategoricalOption()">
+                + Add Option
+              </button>
+
+            </div>
+
+            @if (newCategoricalOptions.length === 0) {
+
+              <div class="info-box">
+                <strong>No options configured.</strong>
+                <p>
+                  Add at least two options.
+                </p>
+              </div>
+
+            }
+
+            <div class="option-list">
+
+              @for (
+                option of newCategoricalOptions;
+                track $index;
+                let i = $index
+              ) {
+
+                <div class="option-row">
+
+                  <div class="rank-number">
+                    {{ i + 1 }}
+                  </div>
+
+                  <input
+                    type="text"
+                    [value]="option"
+                    placeholder="e.g. Excellent"
+                    (input)="updateCategoricalOption(i, $event)" />
+
+                  <button
+                    type="button"
+                    class="delete-button"
+                    (click)="removeCategoricalOption(i)">
+                    Remove
+                  </button>
+
+                </div>
+
+              }
+
+            </div>
+
+          </div>
 
         }
 
@@ -240,7 +913,8 @@
           <button
             type="button"
             class="secondary-button"
-            (click)="cancelForm()">
+            (click)="cancelForm()"
+            [disabled]="isSaving">
             Cancel
           </button>
 
@@ -262,37 +936,49 @@
   }
 
   @if (criterionToDelete) {
-  <div class="confirmation-overlay">
-    <div class="confirmation-dialog">
-      <div class="confirmation-icon">!</div>
 
-      <h3>Delete criterion?</h3>
+    <div class="confirmation-overlay">
 
-      <p>
-        Are you sure you want to delete
-        <strong>{{ criterionToDelete.name }}</strong>?
-        This action cannot be undone.
-      </p>
+      <div class="confirmation-dialog">
 
-      <div class="confirmation-actions">
-        <button
-          type="button"
-          class="secondary-button"
-          (click)="cancelDeleteCriterion()"
-          [disabled]="isSaving">
-          Cancel
-        </button>
+        <div class="confirmation-icon">
+          !
+        </div>
 
-        <button
-          type="button"
-          class="danger-button"
-          (click)="deleteCriterion()"
-          [disabled]="isSaving">
-          {{ isSaving ? 'Deleting...' : 'Delete Criterion' }}
-        </button>
+        <h3>Delete criterion?</h3>
+
+        <p>
+          Are you sure you want to delete
+          <strong>{{ criterionToDelete.name }}</strong>?
+          This action cannot be undone.
+        </p>
+
+        <div class="confirmation-actions">
+
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cancelDeleteCriterion()"
+            [disabled]="isSaving">
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            class="danger-button"
+            (click)="deleteCriterion()"
+            [disabled]="isSaving">
+
+            {{ isSaving ? 'Deleting...' : 'Delete Criterion' }}
+
+          </button>
+
+        </div>
+
       </div>
+
     </div>
-  </div>
-}
+
+  }
 
 </div>

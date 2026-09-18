@@ -37,14 +37,6 @@ import {
 } from '../../../../../core/services/criterion-option.service';
 
 import {
-  NumericalConfigurationComponent
-} from './numerical-configuration/numerical-configuration';
-
-import {
-  CategoricalConfigurationComponent
-} from './categorical-configuration/categorical-configuration';
-
-import {
   CriterionNumericalRuleService
 } from '../../../../../core/services/criterion-numerical-rule.service';
 
@@ -60,9 +52,7 @@ import {
   selector: 'app-criteria',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
-    CategoricalConfigurationComponent,
-    NumericalConfigurationComponent
+    ReactiveFormsModule
   ],
   templateUrl: './criteria.html',
   styleUrl: './criteria.css'
@@ -87,6 +77,7 @@ export class CriteriaComponent implements OnInit {
   criteria: Criterion[] = [];
   numericalRules: CriterionNumericalRule[] = [];
   categoricalOptions: CriterionOption[] = [];
+  intervalRanges: IntervalRange[] = [];
 
   isLoading = true;
   isSaving = false;
@@ -95,9 +86,9 @@ export class CriteriaComponent implements OnInit {
 
   showForm = false;
   configuringCriterionId: number | null = null;
+  draggedIntervalIndex: number | null = null;
 
   criterionToDelete: Criterion | null = null;
-  criterionToEdit: Criterion | null = null;
 
   readonly criterionForm =
     this.formBuilder.nonNullable.group({
@@ -143,6 +134,8 @@ export class CriteriaComponent implements OnInit {
       ]
     });
 
+  editingCriterion: Criterion | null = null;
+
   newIntervalRanges: IntervalRange[] = [];
   newCategoricalOptions: string[] = [];
 
@@ -178,6 +171,7 @@ export class CriteriaComponent implements OnInit {
 
     return null;
   }
+  
 
   private loadCriteria(decisionId: number): void {
     this.isLoading = true;
@@ -192,6 +186,7 @@ export class CriteriaComponent implements OnInit {
 
         this.loadNumericalRules();
         this.loadCategoricalOptions();
+        this.loadIntervalRanges();
       },
 
       error: (error) => {
@@ -219,7 +214,6 @@ export class CriteriaComponent implements OnInit {
           )
         );
 
-        this.isLoading = false;
         this.changeDetector.markForCheck();
       },
 
@@ -265,19 +259,40 @@ export class CriteriaComponent implements OnInit {
     });
   }
 
-  openForm(): void {
-    this.criterionToEdit = null;
+  private loadIntervalRanges(): void {
+    this.intervalRangeService.getRanges().subscribe({
+      next: (ranges) => {
+        this.intervalRanges = ranges.filter(range =>
+          this.numericalRules.some(
+            rule =>
+              rule.id === range.criterionNumericalRuleId
+          )
+        );
 
-    this.criterionForm.reset({
-      name: '',
-      criterionType: CriterionType.Numerical,
-      unit: '',
-      numericType: NumericType.Scope,
-      minValue: 0,
-      maxValue: 100,
-      targetValue: null,
-      direction: Direction.Minimize
+        this.isLoading = false;
+        this.changeDetector.markForCheck();
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to load interval ranges',
+          error
+        );
+
+        this.errorMessage =
+          'Unable to load interval ranges. Please try again.';
+
+        this.isLoading = false;
+        this.changeDetector.markForCheck();
+      }
     });
+  }
+
+  openForm(): void {
+    this.editingCriterion = null;
+    this.configuringCriterionId = null;
+
+    this.resetForm();
 
     this.newIntervalRanges = [];
     this.newCategoricalOptions = [];
@@ -294,7 +309,64 @@ export class CriteriaComponent implements OnInit {
     }
 
     this.showForm = false;
-    this.criterionToEdit = null;
+    this.editingCriterion = null;
+    this.errorMessage = '';
+  }
+
+  configureCriterion(
+    criterion: Criterion
+  ): void {
+    this.showForm = false;
+    this.errorMessage = '';
+
+    this.editingCriterion = criterion;
+    this.configuringCriterionId = criterion.id;
+
+    const rule = this.getNumericalRule(
+      criterion.id
+    );
+
+    this.criterionForm.reset({
+      name: criterion.name,
+      criterionType: criterion.criterionType,
+      unit: criterion.unit ?? '',
+      numericType:
+        rule?.numericType ??
+        NumericType.Scope,
+      minValue:
+        rule?.minValue ??
+        0,
+      maxValue:
+        rule?.maxValue ??
+        100,
+      targetValue:
+        rule?.targetValue ??
+        null,
+      direction:
+        rule?.direction ??
+        Direction.Minimize
+    });
+
+    this.newIntervalRanges = rule
+      ? this.getIntervalRanges(rule.id)
+          .map(range => ({ ...range }))
+      : [];
+
+    this.newCategoricalOptions =
+      this.getCategoricalOptions(
+        criterion.id
+      ).map(option => option.value);
+
+    this.changeDetector.markForCheck();
+  }
+
+  closeConfiguration(): void {
+    if (this.isSaving) {
+      return;
+    }
+
+    this.configuringCriterionId = null;
+    this.editingCriterion = null;
     this.errorMessage = '';
   }
 
@@ -341,10 +413,12 @@ export class CriteriaComponent implements OnInit {
       ...this.newIntervalRanges,
       {
         id: 0,
-        criterionNumericalRuleId: 0,
+        criterionNumericalRuleId:
+          this.getCurrentRuleId(),
         minValue,
         maxValue: minValue + 10,
-        rank: this.newIntervalRanges.length + 1
+        rank:
+          this.newIntervalRanges.length + 1
       }
     ];
   }
@@ -392,6 +466,69 @@ export class CriteriaComponent implements OnInit {
           rank: i + 1
         }));
   }
+  onIntervalDragStart(index: number): void {
+  this.draggedIntervalIndex = index;
+}
+
+onIntervalDragOver(event: DragEvent): void {
+  event.preventDefault();
+}
+
+onIntervalDrop(targetIndex: number): void {
+  if (
+    this.draggedIntervalIndex === null ||
+    this.draggedIntervalIndex === targetIndex
+  ) {
+    return;
+  }
+
+  const ranges = [...this.newIntervalRanges];
+
+  const [movedRange] = ranges.splice(
+    this.draggedIntervalIndex,
+    1
+  );
+
+  ranges.splice(targetIndex, 0, movedRange);
+
+  this.newIntervalRanges = ranges;
+
+  this.draggedIntervalIndex = null;
+}
+
+onIntervalDragEnd(): void {
+  this.draggedIntervalIndex = null;
+}
+
+moveIntervalUp(index: number): void {
+  if (index <= 0) {
+    return;
+  }
+
+  const ranges = [...this.newIntervalRanges];
+
+  [ranges[index - 1], ranges[index]] = [
+    ranges[index],
+    ranges[index - 1]
+  ];
+
+  this.newIntervalRanges = ranges;
+}
+
+moveIntervalDown(index: number): void {
+  if (index >= this.newIntervalRanges.length - 1) {
+    return;
+  }
+
+  const ranges = [...this.newIntervalRanges];
+
+  [ranges[index], ranges[index + 1]] = [
+    ranges[index + 1],
+    ranges[index]
+  ];
+
+  this.newIntervalRanges = ranges;
+}
 
   addCategoricalOption(): void {
     this.newCategoricalOptions = [
@@ -422,8 +559,7 @@ export class CriteriaComponent implements OnInit {
   }
 
   addCriterion(): void {
-    if (this.criterionForm.invalid) {
-      this.criterionForm.markAllAsTouched();
+    if (!this.validateForm()) {
       return;
     }
 
@@ -437,56 +573,24 @@ export class CriteriaComponent implements OnInit {
     const formValue =
       this.criterionForm.getRawValue();
 
-    const name = formValue.name.trim();
-
-    if (!name) {
-      this.errorMessage =
-        'Please enter a criterion name.';
-      return;
-    }
-
-    if (
-      formValue.criterionType ===
-      CriterionType.Numerical
-    ) {
-      if (!this.validateNumericalConfiguration()) {
-        return;
-      }
-    } else {
-      if (!this.validateCategoricalConfiguration()) {
-        return;
-      }
-    }
-
-    const unit =
-      formValue.criterionType ===
-      CriterionType.Numerical
-        ? formValue.unit.trim() || null
-        : null;
-
     this.isSaving = true;
     this.errorMessage = '';
 
     this.criterionService.createCriterion({
       decisionId,
-      name,
+      name: formValue.name.trim(),
       criterionType: formValue.criterionType,
-      unit,
+      unit:
+        formValue.criterionType ===
+        CriterionType.Numerical
+          ? formValue.unit.trim() || null
+          : null,
       weight: 0
     }).subscribe({
       next: (criterion) => {
-        if (
-          criterion.criterionType ===
-          CriterionType.Numerical
-        ) {
-          this.createNumericalConfiguration(
-            criterion
-          );
-        } else {
-          this.createCategoricalConfiguration(
-            criterion
-          );
-        }
+        this.createConfigurationForNewCriterion(
+          criterion
+        );
       },
 
       error: (error) => {
@@ -496,12 +600,733 @@ export class CriteriaComponent implements OnInit {
         );
 
         this.errorMessage =
-          'Unable to create the criterion. Please try again.';
+          this.getApiError(
+            error,
+            'Unable to create the criterion. Please try again.'
+          );
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  saveConfiguration(): void {
+    if (!this.editingCriterion) {
+      return;
+    }
+
+    if (!this.validateForm()) {
+      return;
+    }
+
+    const criterion =
+      this.editingCriterion;
+
+    const formValue =
+      this.criterionForm.getRawValue();
+
+    this.isSaving = true;
+    this.errorMessage = '';
+
+    this.criterionService.updateCriterion(
+      criterion.id,
+      {
+        decisionId: criterion.decisionId,
+        name: formValue.name.trim(),
+        criterionType: formValue.criterionType,
+        unit:
+          formValue.criterionType ===
+          CriterionType.Numerical
+            ? formValue.unit.trim() || null
+            : null,
+        weight: criterion.weight
+      }
+    ).subscribe({
+      next: () => {
+        const updatedCriterion: Criterion = {
+          ...criterion,
+          name: formValue.name.trim(),
+          criterionType: formValue.criterionType,
+          unit:
+            formValue.criterionType ===
+            CriterionType.Numerical
+              ? formValue.unit.trim() || null
+              : null
+        };
+
+        this.updateCriterionConfiguration(
+          updatedCriterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to update criterion',
+          error
+        );
+
+        this.errorMessage =
+          this.getApiError(
+            error,
+            'Unable to update the criterion. Please try again.'
+          );
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private createConfigurationForNewCriterion(
+    criterion: Criterion
+  ): void {
+    if (
+      criterion.criterionType ===
+      CriterionType.Numerical
+    ) {
+      this.createNumericalConfiguration(
+        criterion
+      );
+      return;
+    }
+
+    this.createCategoricalConfiguration(
+      criterion
+    );
+  }
+
+  private createNumericalConfiguration(
+    criterion: Criterion
+  ): void {
+    const formValue =
+      this.criterionForm.getRawValue();
+
+    this.numericalRuleService.createRule({
+      criterionId: criterion.id,
+      numericType: formValue.numericType,
+      minValue: Number(formValue.minValue),
+      maxValue: Number(formValue.maxValue),
+      targetValue:
+        formValue.numericType ===
+        NumericType.TargetValue
+          ? Number(formValue.targetValue)
+          : null,
+      direction:
+        formValue.numericType ===
+        NumericType.Scope
+          ? formValue.direction
+          : null
+    }).subscribe({
+      next: (rule) => {
+        if (
+          rule.numericType ===
+          NumericType.Interval
+        ) {
+          this.intervalRangeService.createRanges({
+            criterionNumericalRuleId: rule.id,
+            ranges:
+              this.newIntervalRanges.map(
+                range => ({
+                  minValue: range.minValue,
+                  maxValue: range.maxValue
+                })
+              )
+          }).subscribe({
+            next: (ranges) => {
+              this.numericalRules = [
+                ...this.numericalRules,
+                rule
+              ];
+
+              this.intervalRanges = [
+                ...this.intervalRanges,
+                ...ranges
+              ];
+
+              this.finishNewCriterion(
+                criterion
+              );
+            },
+
+            error: (error) => {
+              console.error(
+                'Failed to create interval ranges',
+                error
+              );
+
+              this.errorMessage =
+                'The criterion was created, but its interval ranges could not be saved. Please configure it again.';
+
+              this.isSaving = false;
+              this.changeDetector.markForCheck();
+            }
+          });
+
+          return;
+        }
+
+        this.numericalRules = [
+          ...this.numericalRules,
+          rule
+        ];
+
+        this.finishNewCriterion(
+          criterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to create numerical configuration',
+          error
+        );
+
+        this.errorMessage =
+          'The criterion was created, but its numerical configuration could not be saved. Please configure it again.';
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private createCategoricalConfiguration(
+    criterion: Criterion
+  ): void {
+    this.optionService.createOptions({
+      criterionId: criterion.id,
+      options:
+        this.newCategoricalOptions.map(
+          option => option.trim()
+        )
+    }).subscribe({
+      next: (options) => {
+        this.categoricalOptions = [
+          ...this.categoricalOptions,
+          ...options
+        ];
+
+        this.finishNewCriterion(
+          criterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to create categorical options',
+          error
+        );
+
+        this.errorMessage =
+          'The criterion was created, but its options could not be saved. Please configure it again.';
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private updateCriterionConfiguration(
+    criterion: Criterion
+  ): void {
+    const formValue =
+      this.criterionForm.getRawValue();
+
+    if (
+      criterion.criterionType ===
+      CriterionType.Numerical
+    ) {
+      this.updateNumericalConfiguration(
+        criterion,
+        formValue
+      );
+
+      return;
+    }
+
+    this.updateCategoricalConfiguration(
+      criterion
+    );
+  }
+
+  private updateNumericalConfiguration(
+    criterion: Criterion,
+    formValue: ReturnType<
+      typeof this.criterionForm.getRawValue
+    >
+  ): void {
+    const existingRule =
+      this.getNumericalRule(
+        criterion.id
+      );
+
+    const request = {
+      criterionId: criterion.id,
+      numericType: formValue.numericType,
+      minValue: Number(formValue.minValue),
+      maxValue: Number(formValue.maxValue),
+      targetValue:
+        formValue.numericType ===
+        NumericType.TargetValue
+          ? Number(formValue.targetValue)
+          : null,
+      direction:
+        formValue.numericType ===
+        NumericType.Scope
+          ? formValue.direction
+          : null
+    };
+
+    if (existingRule) {
+      this.numericalRuleService.updateRule(
+        existingRule.id,
+        request
+      ).subscribe({
+        next: () => {
+          const updatedRule: CriterionNumericalRule = {
+            id: existingRule.id,
+            ...request
+          };
+
+          this.numericalRules =
+            this.numericalRules.map(
+              rule =>
+                rule.id === existingRule.id
+                  ? updatedRule
+                  : rule
+            );
+
+          this.saveIntervalConfiguration(
+            updatedRule,
+            criterion
+          );
+        },
+
+        error: (error) => {
+          console.error(
+            'Failed to update numerical rule',
+            error
+          );
+
+          this.errorMessage =
+            this.getApiError(
+              error,
+              'Unable to update the numerical configuration. Please try again.'
+            );
+
+          this.isSaving = false;
+          this.changeDetector.markForCheck();
+        }
+      });
+
+      return;
+    }
+
+    this.numericalRuleService.createRule(
+      request
+    ).subscribe({
+      next: (rule) => {
+        this.numericalRules = [
+          ...this.numericalRules,
+          rule
+        ];
+
+        this.saveIntervalConfiguration(
+          rule,
+          criterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to create numerical rule',
+          error
+        );
+
+        this.errorMessage =
+          this.getApiError(
+            error,
+            'Unable to save the numerical configuration. Please try again.'
+          );
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private saveIntervalConfiguration(
+    rule: CriterionNumericalRule,
+    criterion: Criterion
+  ): void {
+    if (rule.numericType !== NumericType.Interval) {
+      this.intervalRanges =
+        this.intervalRanges.filter(
+          range =>
+            range.criterionNumericalRuleId !==
+            rule.id
+        );
+
+      this.finishCriterionConfiguration(
+        criterion
+      );
+
+      return;
+    }
+
+    this.intervalRangeService
+      .getRangesByRule(rule.id)
+      .subscribe({
+        next: (storedRanges) => {
+          const currentRanges =
+            this.newIntervalRanges;
+
+          const currentIds = new Set(
+            currentRanges
+              .filter(range => range.id > 0)
+              .map(range => range.id)
+          );
+
+          const deletedRanges =
+            storedRanges.filter(
+              range => !currentIds.has(range.id)
+            );
+
+          this.deleteIntervalRanges(
+            deletedRanges,
+            () =>
+              this.saveCurrentIntervalRanges(
+                rule,
+                criterion
+              )
+          );
+        },
+
+        error: (error) => {
+          console.error(
+            'Failed to load interval ranges',
+            error
+          );
+
+          this.errorMessage =
+            'Unable to update the interval ranges. Please try again.';
+
+          this.isSaving = false;
+          this.changeDetector.markForCheck();
+        }
+      });
+  }
+
+  private deleteIntervalRanges(
+    ranges: IntervalRange[],
+    onComplete: () => void
+  ): void {
+    if (ranges.length === 0) {
+      onComplete();
+      return;
+    }
+
+    let remaining = ranges.length;
+    let failed = false;
+
+    for (const range of ranges) {
+      this.intervalRangeService
+        .deleteRange(range.id)
+        .subscribe({
+          next: () => {
+            remaining--;
+
+            if (
+              remaining === 0 &&
+              !failed
+            ) {
+              onComplete();
+            }
+          },
+
+          error: (error) => {
+            console.error(
+              'Failed to delete interval range',
+              error
+            );
+
+            if (!failed) {
+              failed = true;
+
+              this.errorMessage =
+                'Unable to update the interval ranges. Please try again.';
+
+              this.isSaving = false;
+              this.changeDetector.markForCheck();
+            }
+          }
+        });
+    }
+  }
+
+  private saveCurrentIntervalRanges(
+    rule: CriterionNumericalRule,
+    criterion: Criterion
+  ): void {
+    const allRanges = [...this.newIntervalRanges];
+
+    const existingRanges =
+      allRanges.filter(
+        range => range.id > 0
+      );
+
+    const newRanges =
+      allRanges.filter(
+        range => range.id === 0
+      );
+
+    if (newRanges.length > 0) {
+      this.intervalRangeService
+        .createRanges({
+          criterionNumericalRuleId: rule.id,
+          ranges: newRanges.map(
+            (range, index) => ({
+              minValue: range.minValue,
+              maxValue: range.maxValue,
+              rank: index + 1
+            })
+          )
+        })
+        .subscribe({
+          next: (createdRanges) => {
+            this.intervalRanges =
+              this.intervalRanges.filter(
+                range =>
+                  range.criterionNumericalRuleId !==
+                  rule.id
+              );
+
+            this.intervalRanges = [
+              ...this.intervalRanges,
+              ...existingRanges,
+              ...createdRanges
+            ];
+
+            this.finishCriterionConfiguration(
+              criterion
+            );
+          },
+
+          error: (error) => {
+            console.error(
+              'Failed to create interval ranges',
+              error
+            );
+
+            this.errorMessage =
+              'Unable to save the interval ranges. Please try again.';
+
+            this.isSaving = false;
+            this.changeDetector.markForCheck();
+          }
+        });
+
+      return;
+    }
+
+    this.intervalRangeService.updateRanges(
+      rule.id,
+      {
+         ranges: existingRanges.map(
+          (range, index) => ({
+            id: range.id,
+            minValue: range.minValue,
+            maxValue: range.maxValue,
+            rank: index + 1
+          })
+        )
+      }
+    ).subscribe({
+      next: () => {
+        this.intervalRanges =
+          this.intervalRanges.filter(
+            range =>
+              range.criterionNumericalRuleId !==
+              rule.id
+          );
+
+        this.intervalRanges = [
+          ...this.intervalRanges,
+          ...existingRanges
+        ];
+
+        this.finishCriterionConfiguration(
+          criterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to update interval ranges',
+          error
+        );
+
+        this.errorMessage =
+          'Unable to update the interval ranges. Please try again.';
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private updateCategoricalConfiguration(
+    criterion: Criterion
+  ): void {
+    const options =
+      this.newCategoricalOptions.map(
+        option => option.trim()
+      );
+
+    const existingOptions =
+      this.getCategoricalOptions(
+        criterion.id
+      );
+
+    const requestOptions = existingOptions.map(
+      (option, index) => ({
+        id: option.id,
+        value:
+          options[index] ?? option.value
+      })
+    );
+
+    const hasNewOptions =
+      options.length > existingOptions.length;
+
+    if (
+      existingOptions.length === 0 ||
+      hasNewOptions
+    ) {
+      this.errorMessage =
+        'Please use the existing categorical options when configuring an existing criterion.';
+
+      this.isSaving = false;
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.optionService.updateOptions(
+      criterion.id,
+      {
+        options: requestOptions
+      }
+    ).subscribe({
+      next: () => {
+        this.categoricalOptions =
+          this.categoricalOptions.map(
+            option => {
+              const updated =
+                requestOptions.find(
+                  item =>
+                    item.id === option.id
+                );
+
+              return updated
+                ? {
+                    ...option,
+                    value: updated.value
+                  }
+                : option;
+            }
+          );
+
+        this.finishCriterionConfiguration(
+          criterion
+        );
+      },
+
+      error: (error) => {
+        console.error(
+          'Failed to update categorical options',
+          error
+        );
+
+        this.errorMessage =
+          this.getApiError(
+            error,
+            'Unable to update categorical options. Please try again.'
+          );
+
+        this.isSaving = false;
+        this.changeDetector.markForCheck();
+      }
+    });
+  }
+
+  private finishNewCriterion(
+    criterion: Criterion
+  ): void {
+    this.criteria = [
+      ...this.criteria,
+      criterion
+    ];
+
+    this.isSaving = false;
+    this.showForm = false;
+
+    this.resetForm();
+    this.newIntervalRanges = [];
+    this.newCategoricalOptions = [];
+
+    this.errorMessage = '';
+
+    this.changeDetector.markForCheck();
+  }
+
+  private finishCriterionConfiguration(
+    criterion: Criterion
+  ): void {
+    this.criteria = this.criteria.map(
+      item =>
+        item.id === criterion.id
+          ? criterion
+          : item
+    );
+
+    this.isSaving = false;
+    this.configuringCriterionId = null;
+    this.editingCriterion = null;
+    this.errorMessage = '';
+
+    this.changeDetector.markForCheck();
+  }
+
+  private validateForm(): boolean {
+    if (this.criterionForm.invalid) {
+      this.criterionForm.markAllAsTouched();
+
+      this.errorMessage =
+        'Please complete the required fields.';
+
+      return false;
+    }
+
+    const formValue =
+      this.criterionForm.getRawValue();
+
+    const name = formValue.name.trim();
+
+    if (!name) {
+      this.errorMessage =
+        'Please enter a criterion name.';
+      return false;
+    }
+
+    if (
+      formValue.criterionType ===
+      CriterionType.Numerical
+    ) {
+      return this.validateNumericalConfiguration();
+    }
+
+    return this.validateCategoricalConfiguration();
   }
 
   private validateNumericalConfiguration(): boolean {
@@ -510,6 +1335,15 @@ export class CriteriaComponent implements OnInit {
 
     const minValue = Number(formValue.minValue);
     const maxValue = Number(formValue.maxValue);
+
+    if (
+      !Number.isFinite(minValue) ||
+      !Number.isFinite(maxValue)
+    ) {
+      this.errorMessage =
+        'Minimum and maximum values must be valid numbers.';
+      return false;
+    }
 
     if (minValue >= maxValue) {
       this.errorMessage =
@@ -531,6 +1365,7 @@ export class CriteriaComponent implements OnInit {
         Number(formValue.targetValue);
 
       if (
+        !Number.isFinite(targetValue) ||
         targetValue < minValue ||
         targetValue > maxValue
       ) {
@@ -562,9 +1397,20 @@ export class CriteriaComponent implements OnInit {
       }
 
       for (const range of this.newIntervalRanges) {
-        if (range.minValue >= range.maxValue) {
+        if (
+          range.minValue >= range.maxValue
+        ) {
           this.errorMessage =
             'Each interval must have a minimum value smaller than its maximum value.';
+          return false;
+        }
+
+        if (
+          range.minValue < minValue ||
+          range.maxValue > maxValue
+        ) {
+          this.errorMessage =
+            'Interval ranges must be inside the minimum and maximum values.';
           return false;
         }
       }
@@ -629,195 +1475,7 @@ export class CriteriaComponent implements OnInit {
     return true;
   }
 
-  private createNumericalConfiguration(
-    criterion: Criterion
-  ): void {
-    const formValue =
-      this.criterionForm.getRawValue();
-
-    this.numericalRuleService.createRule({
-      criterionId: criterion.id,
-      numericType: formValue.numericType,
-      minValue: Number(formValue.minValue),
-      maxValue: Number(formValue.maxValue),
-      targetValue:
-        formValue.numericType ===
-        NumericType.TargetValue
-          ? Number(formValue.targetValue)
-          : null,
-      direction:
-        formValue.numericType ===
-        NumericType.Scope
-          ? formValue.direction
-          : null
-    }).subscribe({
-      next: (rule) => {
-        if (
-          rule.numericType ===
-          NumericType.Interval
-        ) {
-          this.createNewIntervalRanges(
-            criterion,
-            rule.id
-          );
-        } else {
-          this.finishNewCriterion(
-            criterion,
-            rule
-          );
-        }
-      },
-
-      error: (error) => {
-        console.error(
-          'Failed to create numerical configuration',
-          error
-        );
-
-        this.errorMessage =
-          'The criterion was created, but its numerical configuration could not be saved. Please configure it using Configure.';
-
-        this.criteria = [
-          ...this.criteria,
-          criterion
-        ];
-
-        this.isSaving = false;
-        this.changeDetector.markForCheck();
-      }
-    });
-  }
-
-  private createNewIntervalRanges(
-    criterion: Criterion,
-    ruleId: number
-  ): void {
-    this.intervalRangeService.createRanges({
-      criterionNumericalRuleId: ruleId,
-      ranges: this.newIntervalRanges.map(
-        range => ({
-          minValue: range.minValue,
-          maxValue: range.maxValue
-        })
-      )
-    }).subscribe({
-      next: (ranges) => {
-        const rule =
-          this.numericalRules.find(
-            item => item.id === ruleId
-          );
-
-        if (rule) {
-          this.numericalRules = [
-            ...this.numericalRules,
-            rule
-          ];
-        }
-
-        this.finishNewCriterion(
-          criterion,
-          undefined,
-          ranges
-        );
-      },
-
-      error: (error) => {
-        console.error(
-          'Failed to create interval ranges',
-          error
-        );
-
-        this.errorMessage =
-          'The criterion was created, but its interval ranges could not be saved. Please configure it using Configure.';
-
-        this.criteria = [
-          ...this.criteria,
-          criterion
-        ];
-
-        this.isSaving = false;
-        this.changeDetector.markForCheck();
-      }
-    });
-  }
-
-  private createCategoricalConfiguration(
-    criterion: Criterion
-  ): void {
-    this.optionService.createOptions({
-      criterionId: criterion.id,
-      options:
-        this.newCategoricalOptions.map(
-          option => option.trim()
-        )
-    }).subscribe({
-      next: (options) => {
-        this.categoricalOptions = [
-          ...this.categoricalOptions,
-          ...options
-        ];
-
-        this.finishNewCriterion(
-          criterion,
-          undefined,
-          undefined,
-          options
-        );
-      },
-
-      error: (error) => {
-        console.error(
-          'Failed to create categorical options',
-          error
-        );
-
-        this.errorMessage =
-          'The criterion was created, but its options could not be saved. Please configure it using Configure.';
-
-        this.criteria = [
-          ...this.criteria,
-          criterion
-        ];
-
-        this.isSaving = false;
-        this.changeDetector.markForCheck();
-      }
-    });
-  }
-
-  private finishNewCriterion(
-    criterion: Criterion,
-    rule?: CriterionNumericalRule,
-    ranges?: IntervalRange[],
-    options?: CriterionOption[]
-  ): void {
-    this.criteria = [
-      ...this.criteria,
-      criterion
-    ];
-
-    if (rule) {
-      this.numericalRules = [
-        ...this.numericalRules,
-        rule
-      ];
-    }
-
-    if (ranges) {
-      // Ranges are loaded again when Configure is opened.
-    }
-
-    if (options) {
-      this.categoricalOptions = [
-        ...this.categoricalOptions,
-        ...options
-      ];
-    }
-
-    this.isSaving = false;
-    this.showForm = false;
-    this.errorMessage = '';
-
+  private resetForm(): void {
     this.criterionForm.reset({
       name: '',
       criterionType: CriterionType.Numerical,
@@ -828,116 +1486,86 @@ export class CriteriaComponent implements OnInit {
       targetValue: null,
       direction: Direction.Minimize
     });
-
-    this.newIntervalRanges = [];
-    this.newCategoricalOptions = [];
-
-    this.changeDetector.markForCheck();
   }
 
-  startEditCriterion(
-    criterion: Criterion
-  ): void {
-    this.criterionToEdit = criterion;
+  private getCurrentRuleId(): number {
+    if (!this.editingCriterion) {
+      return 0;
+    }
 
-    this.criterionForm.reset({
-      name: criterion.name,
-      criterionType: criterion.criterionType,
-      unit: criterion.unit ?? '',
-      numericType:
-        this.getNumericalRule(
-          criterion.id
-        )?.numericType ??
-        NumericType.Scope,
-      minValue:
-        this.getNumericalRule(
-          criterion.id
-        )?.minValue ??
-        0,
-      maxValue:
-        this.getNumericalRule(
-          criterion.id
-        )?.maxValue ??
-        100,
-      targetValue:
-        this.getNumericalRule(
-          criterion.id
-        )?.targetValue ??
-        null,
-      direction:
-        this.getNumericalRule(
-          criterion.id
-        )?.direction ??
-        Direction.Minimize
-    });
-
-    this.errorMessage = '';
-    this.showForm = true;
-    this.changeDetector.markForCheck();
+    return this.getNumericalRule(
+      this.editingCriterion.id
+    )?.id ?? 0;
   }
 
-  saveCriterionEdit(): void {
-    if (!this.criterionToEdit) {
-      return;
+  getNumericalRule(
+    criterionId: number
+  ): CriterionNumericalRule | undefined {
+    return this.numericalRules.find(
+      rule =>
+        rule.criterionId === criterionId
+    );
+  }
+
+  getIntervalRanges(
+    ruleId: number
+  ): IntervalRange[] {
+    return this.intervalRanges
+      .filter(
+        range =>
+          range.criterionNumericalRuleId ===
+          ruleId
+      )
+      .sort(
+        (a, b) => a.rank - b.rank
+      );
+  }
+
+  getCategoricalOptions(
+    criterionId: number
+  ): CriterionOption[] {
+    return this.categoricalOptions
+      .filter(
+        option =>
+          option.criterionId === criterionId
+      )
+      .sort(
+        (a, b) => a.rank - b.rank
+      );
+  }
+
+  getCategoricalOptionCount(
+    criterionId: number
+  ): number {
+    return this.getCategoricalOptions(
+      criterionId
+    ).length;
+  }
+
+  getCriterionTypeName(
+    type: CriterionType
+  ): string {
+    return type === CriterionType.Numerical
+      ? 'Numerical'
+      : 'Categorical';
+  }
+
+  getNumericTypeName(
+    numericType: NumericType
+  ): string {
+    switch (numericType) {
+      case NumericType.Scope:
+        return 'Scope';
+
+      case NumericType.Interval:
+        return 'Interval';
+
+      case NumericType.TargetValue:
+        return 'Target Value';
+
+      default:
+        return '';
     }
-
-    if (this.criterionForm.invalid) {
-      this.criterionForm.markAllAsTouched();
-      return;
-    }
-
-    const criterion =
-      this.criterionToEdit;
-
-    const formValue =
-      this.criterionForm.getRawValue();
-
-    this.isSaving = true;
-    this.errorMessage = '';
-
-    this.criterionService.updateCriterion(
-      criterion.id,
-      {
-        decisionId: criterion.decisionId,
-        name: formValue.name.trim(),
-        criterionType:
-          criterion.criterionType,
-        unit:
-          criterion.criterionType ===
-          CriterionType.Numerical
-            ? formValue.unit.trim() || null
-            : null,
-        weight: criterion.weight
-      }
-    ).subscribe({
-      next: (updatedCriterion) => {
-        this.criteria = this.criteria.map(
-          item =>
-            item.id === updatedCriterion.id
-              ? updatedCriterion
-              : item
-        );
-
-        this.isSaving = false;
-        this.showForm = false;
-        this.criterionToEdit = null;
-
-        this.changeDetector.markForCheck();
-      },
-
-      error: (error) => {
-        console.error(
-          'Failed to update criterion',
-          error
-        );
-
-        this.errorMessage =
-          'Unable to update the criterion. Please try again.';
-
-        this.isSaving = false;
-        this.changeDetector.markForCheck();
-      }
-    });
   }
 
   confirmDeleteCriterion(
@@ -973,24 +1601,36 @@ export class CriteriaComponent implements OnInit {
             item => item.id !== criterion.id
           );
 
+        const ruleIds =
+          this.numericalRules
+            .filter(
+              rule =>
+                rule.criterionId ===
+                criterion.id
+            )
+            .map(rule => rule.id);
+
         this.numericalRules =
           this.numericalRules.filter(
             rule =>
-              rule.criterionId !== criterion.id
+              rule.criterionId !==
+              criterion.id
+          );
+
+        this.intervalRanges =
+          this.intervalRanges.filter(
+            range =>
+              !ruleIds.includes(
+                range.criterionNumericalRuleId
+              )
           );
 
         this.categoricalOptions =
           this.categoricalOptions.filter(
             option =>
-              option.criterionId !== criterion.id
+              option.criterionId !==
+              criterion.id
           );
-
-        if (
-          this.configuringCriterionId ===
-          criterion.id
-        ) {
-          this.configuringCriterionId = null;
-        }
 
         this.criterionToDelete = null;
         this.isSaving = false;
@@ -1005,8 +1645,10 @@ export class CriteriaComponent implements OnInit {
         );
 
         this.errorMessage =
-          error?.error?.Error ??
-          'Unable to delete the criterion. Please try again.';
+          this.getApiError(
+            error,
+            'Unable to delete the criterion. Please try again.'
+          );
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1014,107 +1656,16 @@ export class CriteriaComponent implements OnInit {
     });
   }
 
-  configureCriterion(
-    criterion: Criterion
-  ): void {
-    this.errorMessage = '';
-    this.configuringCriterionId =
-      criterion.id;
-
-    this.changeDetector.markForCheck();
-  }
-
-  onCategoricalOptionsChanged(
-    options: CriterionOption[]
-  ): void {
-    this.categoricalOptions = options;
-    this.changeDetector.markForCheck();
-  }
-
-  onNumericalRuleSaved(
-    rule: CriterionNumericalRule
-  ): void {
-    const existingIndex =
-      this.numericalRules.findIndex(
-        item => item.id === rule.id
-      );
-
-    if (existingIndex >= 0) {
-      this.numericalRules =
-        this.numericalRules.map(
-          item =>
-            item.id === rule.id
-              ? rule
-              : item
-        );
-    } else {
-      this.numericalRules = [
-        ...this.numericalRules,
-        rule
-      ];
-    }
-
-    this.changeDetector.markForCheck();
-  }
-
-  closeConfiguration(): void {
-    this.configuringCriterionId = null;
-    this.errorMessage = '';
-  }
-
-  getNumericalRule(
-    criterionId: number
-  ): CriterionNumericalRule | undefined {
-    return this.numericalRules.find(
-      rule =>
-        rule.criterionId === criterionId
+  private getApiError(
+    error: any,
+    fallback: string
+  ): string {
+    return (
+      error?.error?.Error ??
+      error?.error?.error ??
+      fallback
     );
   }
 
-  getCriterionTypeName(
-    type: CriterionType
-  ): string {
-    return type === CriterionType.Numerical
-      ? 'Numerical'
-      : 'Categorical';
-  }
-
-  getNumericTypeName(
-    numericType: NumericType
-  ): string {
-    switch (numericType) {
-      case NumericType.Scope:
-        return 'Scope';
-
-      case NumericType.Interval:
-        return 'Interval';
-
-      case NumericType.TargetValue:
-        return 'Target Value';
-
-      default:
-        return '';
-    }
-  }
-
-  getCategoricalOptions(
-    criterionId: number
-  ): CriterionOption[] {
-    return this.categoricalOptions
-      .filter(
-        option =>
-          option.criterionId === criterionId
-      )
-      .sort(
-        (a, b) => a.rank - b.rank
-      );
-  }
-
-  getCategoricalOptionCount(
-    criterionId: number
-  ): number {
-    return this.getCategoricalOptions(
-      criterionId
-    ).length;
-  }
+  
 }
