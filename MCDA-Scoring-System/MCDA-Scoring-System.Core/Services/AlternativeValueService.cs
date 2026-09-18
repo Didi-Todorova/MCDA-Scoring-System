@@ -251,9 +251,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         private async Task ValidateValueAsync(
-            Criterion criterion,
-            decimal? numericValue,
-            int? criterionOptionId)
+    Criterion criterion,
+    decimal? numericValue,
+    int? criterionOptionId)
         {
             if (criterion.CriterionType == CriterionType.Numerical)
             {
@@ -267,6 +267,40 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 {
                     throw new ArgumentException(
                         "A criterion option cannot be provided for a numerical criterion.");
+                }
+
+                var rule = await _repo
+                    .AllReadonly<CriterionNumericalRule>()
+                    .FirstOrDefaultAsync(r =>
+                        r.CriterionId == criterion.Id);
+
+                if (rule == null)
+                {
+                    throw new ArgumentException(
+                        "The numerical criterion is not configured.");
+                }
+
+                if (numericValue.Value < rule.MinValue ||
+                    numericValue.Value > rule.MaxValue)
+                {
+                    throw new ArgumentException(
+                        $"Numeric value must be between {rule.MinValue} and {rule.MaxValue}.");
+                }
+
+                if (rule.NumericType == NumericType.Interval)
+                {
+                    var intervalExists = await _repo
+                        .AllReadonly<IntervalRange>()
+                        .AnyAsync(r =>
+                            r.CriterionNumericalRuleId == rule.Id &&
+                            numericValue.Value >= r.MinValue &&
+                            numericValue.Value <= r.MaxValue);
+
+                    if (!intervalExists)
+                    {
+                        throw new ArgumentException(
+                            "Numeric value does not belong to any configured interval range.");
+                    }
                 }
 
                 return;

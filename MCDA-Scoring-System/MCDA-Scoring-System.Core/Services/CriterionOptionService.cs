@@ -17,7 +17,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         public async Task<IEnumerable<CriterionOptionDto>>
-            CreateCriterionOptionAsync(CreateCriterionOptionsDto dto)
+    CreateCriterionOptionAsync(CreateCriterionOptionsDto dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -34,21 +34,39 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new ArgumentException(
                     "At least two criterion options are required.");
 
-            ValidateOptionValues(dto.Options);
+            var normalizedOptions = dto.Options
+                .Select(option => option.Trim())
+                .ToList();
+
+            foreach (var option in normalizedOptions)
+            {
+                ValidateOptionValue(option);
+            }
+
+            if (normalizedOptions
+                .GroupBy(
+                    value => value,
+                    StringComparer.OrdinalIgnoreCase)
+                .Any(group => group.Count() > 1))
+            {
+                throw new ArgumentException(
+                    "Criterion options must be unique.");
+            }
 
             var existingOptions = await _repo
                 .AllReadonly<CriterionOption>()
-                .AnyAsync(co => co.CriterionId == dto.CriterionId);
+                .AnyAsync(co =>
+                    co.CriterionId == dto.CriterionId);
 
             if (existingOptions)
                 throw new ArgumentException(
                     "This criterion already has options.");
 
-            var options = dto.Options
+            var options = normalizedOptions
                 .Select((value, index) => new CriterionOption
                 {
                     CriterionId = dto.CriterionId,
-                    Value = value.Trim(),
+                    Value = value,
                     Rank = index + 1
                 })
                 .ToList();
@@ -72,6 +90,17 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
             if (option == null)
                 return false;
+
+            var isUsed = await _repo
+                .AllReadonly<AlternativeValue>()
+                .AnyAsync(av =>
+                    av.CriterionOptionId == option.Id);
+
+            if (isUsed)
+            {
+                throw new ArgumentException(
+                    "This criterion option is currently used by an alternative and cannot be deleted.");
+            }
 
             var remainingOptions = await _repo.All<CriterionOption>()
                 .Where(co =>
@@ -122,8 +151,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         public async Task PatchCriterionOptionAsync(
-            int id,
-            PatchCriterionOptionDto dto)
+    int id,
+    PatchCriterionOptionDto dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -135,36 +164,56 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new KeyNotFoundException(
                     $"Criterion Option with ID {id} not found.");
 
-            var criterionId =
-                dto.CriterionId ?? criterionOption.CriterionId;
+            if (dto.CriterionId.HasValue &&
+                dto.CriterionId.Value != criterionOption.CriterionId)
+            {
+                throw new ArgumentException(
+                    "A criterion option cannot be moved to another criterion.");
+            }
 
-            var value =
-                dto.Value ?? criterionOption.Value;
+            var value = dto.Value ?? criterionOption.Value;
 
             var criterion =
-                await _repo.GetByIdAsync<Criterion>(criterionId);
+                await _repo.GetByIdAsync<Criterion>(
+                    criterionOption.CriterionId);
 
             if (criterion == null)
                 throw new KeyNotFoundException(
-                    $"Criterion with ID {criterionId} not found.");
+                    $"Criterion with ID {criterionOption.CriterionId} not found.");
 
             ValidateCriterionType(criterion);
             ValidateOptionValue(value);
 
-            if (criterionId != criterionOption.CriterionId)
+            var valueChanged = !string.Equals(
+                criterionOption.Value.Trim(),
+                value.Trim(),
+                StringComparison.OrdinalIgnoreCase);
+
+            if (valueChanged)
             {
-                var existingOptions = await _repo
+                var isUsed = await _repo
+                    .AllReadonly<AlternativeValue>()
+                    .AnyAsync(av =>
+                        av.CriterionOptionId == criterionOption.Id);
+
+                if (isUsed)
+                {
+                    throw new ArgumentException(
+                        "This criterion option is already used by an alternative and cannot be renamed.");
+                }
+
+                var duplicateExists = await _repo
                     .AllReadonly<CriterionOption>()
                     .AnyAsync(co =>
-                        co.CriterionId == criterionId &&
-                        co.Id != id);
+                        co.Id != id &&
+                        co.CriterionId == criterionOption.CriterionId &&
+                        co.Value.ToLower() == value.Trim().ToLower());
 
-                if (existingOptions)
+                if (duplicateExists)
+                {
                     throw new ArgumentException(
-                        "The target criterion already has options.");
-
-                criterionOption.CriterionId = criterionId;
-                criterionOption.Rank = 1;
+                        "A criterion option with this value already exists.");
+                }
             }
 
             criterionOption.Value = value.Trim();
@@ -217,6 +266,31 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     "The submitted options do not match the criterion options.");
 
             var optionsById = options.ToDictionary(o => o.Id);
+
+            for (int i = 0; i < dto.Options.Count; i++)
+            {
+                var input = dto.Options[i];
+                var option = optionsById[input.Id];
+
+                var valueChanged = !string.Equals(
+                    option.Value.Trim(),
+                    input.Value.Trim(),
+                    StringComparison.OrdinalIgnoreCase);
+
+                if (valueChanged)
+                {
+                    var isUsed = await _repo
+                        .AllReadonly<AlternativeValue>()
+                        .AnyAsync(av =>
+                            av.CriterionOptionId == option.Id);
+
+                    if (isUsed)
+                    {
+                        throw new ArgumentException(
+                            $"Criterion option '{option.Value}' is already used by an alternative and cannot be renamed.");
+                    }
+                }
+            }
 
             for (int i = 0; i < dto.Options.Count; i++)
             {
@@ -280,8 +354,16 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         private static void ValidateOptionValue(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
+            {
                 throw new ArgumentException(
-                    "Criterion options cannot be empty.");
+                    "Criterion option value is required.");
+            }
+
+            if (value.Trim().Length > 200)
+            {
+                throw new ArgumentException(
+                    "Criterion option value cannot exceed 200 characters.");
+            }
         }
     }
 }

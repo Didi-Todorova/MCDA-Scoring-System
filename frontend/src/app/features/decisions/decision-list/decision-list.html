@@ -1,73 +1,187 @@
 <div class="page">
+
   <header class="page-header">
+
     <div>
       <h1>Decisions</h1>
-      <p>Manage your MCDA decision models.</p>
+
+      <p>
+        Manage your MCDA decision models.
+      </p>
     </div>
 
     <button
       type="button"
       class="primary-button"
-      (click)="createDecision()"
-    >
+      (click)="createDecision()">
       + New Decision
     </button>
+
   </header>
 
   @if (isLoading) {
+
     <div class="state-message">
       Loading decisions...
     </div>
+
   }
 
   @if (errorMessage) {
-    <div class="error-message">
-      {{ errorMessage }}
 
-      <button type="button" (click)="loadDecisions()">
+    <div class="error-message">
+
+      <span>
+        {{ errorMessage }}
+      </span>
+
+      <button
+        type="button"
+        (click)="loadDecisions()">
         Try again
       </button>
+
     </div>
+
   }
 
-  @if (!isLoading && !errorMessage && decisions.length === 0) {
-    <div class="empty-state">
-      <h2>No decisions yet</h2>
-      <p>Create your first decision to get started.</p>
+  @if (
+    !isLoading &&
+    !errorMessage &&
+    decisions.length === 0
+  ) {
 
-      <button type="button" class="primary-button">
+    <div class="empty-state">
+
+      <h2>
+        No decisions yet
+      </h2>
+
+      <p>
+        Create your first decision to get started.
+      </p>
+
+      <button
+        type="button"
+        class="primary-button"
+        (click)="createDecision()">
         Create Decision
       </button>
+
     </div>
+
   }
 
-  @if (!isLoading && !errorMessage && decisions.length > 0) {
-    <div class="decision-grid">
-      @for (decision of decisions; track decision.id) {
-        <article class="decision-card">
-          <div class="card-content">
-            <h2>{{ decision.name }}</h2>
+  @if (
+    !isLoading &&
+    !errorMessage &&
+    decisions.length > 0
+  ) {
 
-            <div class="method">
-              <span class="label">Weighting method</span>
-              <span>
-                {{ getWeightingMethodName(decision.weightingMethod) }}
-              </span>
-            </div>
+    <div class="decision-grid">
+
+      @for (
+        decision of decisions;
+        track decision.id
+      ) {
+
+        <article class="decision-card">
+
+          <div class="card-content">
+
+            <h2>
+              {{ decision.name }}
+            </h2>
+
           </div>
 
           <div class="card-actions">
+
             <button
               type="button"
-              (click)="openDecision(decision)"
-            >
+              class="open-button"
+              (click)="openDecision(decision)">
               Open
             </button>
-            <button type="button">Edit</button>
-            <button type="button" class="danger-button">Delete</button>
+
+            <button
+              type="button"
+              (click)="editDecision(decision)">
+              Edit
+            </button>
+
+            <button
+              type="button"
+              class="danger-button"
+              (click)="confirmDelete(decision)">
+              Delete
+            </button>
+
           </div>
+
         </article>
+
       }
+
     </div>
+
   }
+
 </div>
+
+@if (decisionToDelete) {
+
+  <div class="modal-backdrop">
+
+    <div class="delete-modal">
+
+      <span class="modal-label">
+        Delete decision
+      </span>
+
+      <h2>
+        Delete "{{ decisionToDelete.name }}"?
+      </h2>
+
+      <p>
+        This action will permanently delete this
+        decision and its associated data.
+      </p>
+
+      @if (deleteErrorMessage) {
+        <div class="delete-error">
+          {{ deleteErrorMessage }}
+        </div>
+      }
+
+      <div class="modal-actions">
+
+        <button
+          type="button"
+          class="secondary-button"
+          [disabled]="isDeleting"
+          (click)="cancelDelete()">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          class="danger-confirm-button"
+          [disabled]="isDeleting"
+          (click)="deleteDecision()">
+
+          @if (isDeleting) {
+            Deleting...
+          } @else {
+            Delete Decision
+          }
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+}

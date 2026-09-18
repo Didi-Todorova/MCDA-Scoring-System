@@ -18,7 +18,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 
         [HttpPost]
         public async Task<IActionResult> Create(
-            [FromBody] CreateAlternativeValueDto dto)
+    [FromBody] CreateAlternativeValueDto dto)
         {
             try
             {
@@ -31,9 +31,19 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
                     new { id = alternativeValue.Id },
                     alternativeValue);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    Error = ex.Message
+                });
+            }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
             }
         }
 
@@ -112,19 +122,37 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result =
-                await _alternativeValueService
-                    .DeleteAlternativeValueAsync(id);
+            try
+            {
+                var result =
+                    await _alternativeValueService
+                        .DeleteAlternativeValueAsync(id);
 
-            if (!result)
+                if (!result)
+                {
+                    return NotFound(new
+                    {
+                        Error =
+                            $"Alternative value with ID {id} not found."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound(new
                 {
-                    Error = $"Alternative value with ID {id} not found."
+                    Error = ex.Message
                 });
             }
-
-            return NoContent();
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
+            }
         }
     }
 }

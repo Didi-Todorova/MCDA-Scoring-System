@@ -39,94 +39,109 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                     $"and criterion {criterionId}.");
             }
 
-            return alternativeValue.Criterion.CriterionType switch
+            var alternative = alternativeValue.Alternative;
+            var criterion = alternativeValue.Criterion;
+
+            if (alternative == null)
+            {
+                throw new InvalidOperationException(
+                    "The alternative value is not linked to an alternative.");
+            }
+
+            if (criterion == null)
+            {
+                throw new InvalidOperationException(
+                    "The alternative value is not linked to a criterion.");
+            }
+
+            if (alternative.DecisionId !=
+                criterion.DecisionId)
+            {
+                throw new InvalidOperationException(
+                    "The alternative and criterion do not belong to the same decision.");
+            }
+
+            return criterion.CriterionType switch
             {
                 CriterionType.Numerical =>
-                    ChooseNumericalRatingMethod(
-                        alternativeValue.Criterion
-                            .CriterionNumericalRule?
-                            .NumericType
-                            ?? throw new InvalidOperationException(
-                                "Numerical criterion has no numerical rule."),
+                    CalculateNumericalRating(
+                        criterion,
                         alternativeValue),
 
                 CriterionType.Categorical =>
-                    CalculateRatingCategory(alternativeValue),
+                    CalculateCategoricalRating(
+                        criterion,
+                        alternativeValue),
 
                 _ => throw new ArgumentOutOfRangeException(
-                    nameof(alternativeValue.Criterion.CriterionType),
-                    alternativeValue.Criterion.CriterionType,
+                    nameof(criterion.CriterionType),
+                    criterion.CriterionType,
                     "Unsupported criterion type.")
             };
         }
 
-        private decimal ChooseNumericalRatingMethod(
-            NumericType value,
+        private decimal CalculateNumericalRating(
+            Criterion criterion,
             AlternativeValue alternativeValue)
         {
-            var rule = alternativeValue.Criterion.CriterionNumericalRule;
+            var rule = criterion.CriterionNumericalRule;
 
             if (rule == null)
             {
                 throw new InvalidOperationException(
-                    "Numerical criterion has no numerical rule.");
+                    $"Numerical criterion '{criterion.Name}' has no numerical rule.");
             }
 
-            if (alternativeValue.NumericValue == null)
+            ValidateNumericalRule(rule);
+
+            if (!alternativeValue.NumericValue.HasValue)
             {
                 throw new InvalidOperationException(
-                    "Numerical criterion has no numeric value.");
+                    $"Numerical criterion '{criterion.Name}' has no numeric value.");
+            }
+
+            if (alternativeValue.CriterionOptionId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"Numerical criterion '{criterion.Name}' cannot use a categorical option.");
             }
 
             var rawValue = alternativeValue.NumericValue.Value;
 
-            switch (value)
+            if (rawValue < rule.MinValue ||
+                rawValue > rule.MaxValue)
             {
-                case NumericType.Scope:
+                throw new ArgumentException(
+                    $"Value {rawValue} for criterion '{criterion.Name}' " +
+                    $"must be between {rule.MinValue} and {rule.MaxValue}.");
+            }
 
-                    if (rule.Direction == null)
-                    {
-                        throw new InvalidOperationException(
-                            "Direction is required for Scope rating.");
-                    }
-
-                    return CalculateRatingScope(
+            return rule.NumericType switch
+            {
+                NumericType.Scope =>
+                    CalculateRatingScope(
                         rawValue,
                         rule.MinValue,
                         rule.MaxValue,
-                        rule.Direction.Value);
+                        rule.Direction!.Value),
 
-                case NumericType.Interval:
-
-                    var intervalPosition = CheckIntervalAffiliation(
+                NumericType.Interval =>
+                    CalculateRatingInterval(
                         rawValue,
-                        rule.IntervalRanges,
-                        out int intervalNumber);
+                        rule.IntervalRanges),
 
-                    return CalculateRatingInterval(
-                        intervalPosition,
-                        intervalNumber);
-
-                case NumericType.TargetValue:
-
-                    if (rule.TargetValue == null)
-                    {
-                        throw new InvalidOperationException(
-                            "Target value is required for TargetValue rating.");
-                    }
-
-                    return CalculateRatingTargetValue(
+                NumericType.TargetValue =>
+                    CalculateRatingTargetValue(
                         rawValue,
-                        rule.TargetValue.Value,
+                        rule.TargetValue!.Value,
                         rule.MinValue,
-                        rule.MaxValue);
+                        rule.MaxValue),
 
-                default:
-                    throw new ArgumentOutOfRangeException(
-                        nameof(value),
-                        value,
-                        "Unsupported numeric type.");
-            }
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(rule.NumericType),
+                    rule.NumericType,
+                    "Unsupported numeric type.")
+            };
         }
 
         private decimal CalculateRatingScope(
@@ -150,40 +165,69 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                     (rawValue - minValue) * 4m /
                     (maxValue - minValue);
             }
-            else
+            else if (direction == Direction.Minimize)
             {
                 rating =
                     1m +
                     (maxValue - rawValue) * 4m /
                     (maxValue - minValue);
             }
+            else
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(direction),
+                    direction,
+                    "Unsupported direction.");
+            }
 
-            return Math.Round(rating, 2);
+            return Math.Round(
+                Math.Clamp(rating, 1m, 5m),
+                2);
         }
 
         private decimal CalculateRatingInterval(
-            int intervalPosition,
-            int intervalNumber)
+            decimal rawValue,
+            ICollection<IntervalRange>? intervalRanges)
         {
-            if (intervalPosition < 1 ||
-                intervalPosition > intervalNumber)
+            if (intervalRanges == null)
             {
-                throw new ArgumentException(
-                    "The value does not belong to any interval range.");
+                throw new InvalidOperationException(
+                    "Interval rating has no configured ranges.");
             }
 
-            if (intervalNumber < 2)
+            var ranges = intervalRanges
+                .OrderBy(r => r.Rank)
+                .ToList();
+
+            if (ranges.Count < 2)
             {
                 throw new InvalidOperationException(
                     "At least two interval ranges are required.");
             }
 
+            ValidateIntervalRanges(ranges);
+
+            var selectedRange = ranges.FirstOrDefault(
+                r =>
+                    rawValue >= r.MinValue &&
+                    rawValue <= r.MaxValue);
+
+            if (selectedRange == null)
+            {
+                throw new ArgumentException(
+                    $"Value {rawValue} does not belong to any interval range.");
+            }
+
+            var intervalPosition = ranges.IndexOf(selectedRange) + 1;
+
             decimal rating =
                 5m -
                 ((intervalPosition - 1) * 4m /
-                (intervalNumber - 1));
+                (ranges.Count - 1));
 
-            return Math.Round(rating, 2);
+            return Math.Round(
+                Math.Clamp(rating, 1m, 5m),
+                2);
         }
 
         private decimal CalculateRatingTargetValue(
@@ -207,11 +251,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
             decimal rating;
 
-            if (rawValue < lowerBound || rawValue > upperBound)
-            {
-                rating = 1m;
-            }
-            else if (rawValue <= targetValue)
+            if (rawValue <= targetValue)
             {
                 if (targetValue == lowerBound)
                 {
@@ -240,76 +280,188 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                 }
             }
 
-            return Math.Round(rating, 2);
+            return Math.Round(
+                Math.Clamp(rating, 1m, 5m),
+                2);
         }
 
-        private int CheckIntervalAffiliation(
-            decimal rawValue,
-            ICollection<IntervalRange> intervalRanges,
-            out int intervalNumber)
-        {
-            var ranges = intervalRanges
-                .OrderBy(r => r.Rank)
-                .ToList();
-
-            intervalNumber = ranges.Count;
-
-            if (intervalNumber < 2)
-            {
-                throw new InvalidOperationException(
-                    "At least two interval ranges are required.");
-            }
-
-            var selectedRange = ranges.FirstOrDefault(
-                r =>
-                    rawValue >= r.MinValue &&
-                    rawValue <= r.MaxValue);
-
-            if (selectedRange == null)
-            {
-                throw new ArgumentException(
-                    $"Value {rawValue} does not belong to any interval range.");
-            }
-
-            return selectedRange.Rank;
-        }
-
-        private decimal CalculateRatingCategory(
+        private decimal CalculateCategoricalRating(
+            Criterion criterion,
             AlternativeValue alternativeValue)
         {
-            var options = alternativeValue.Criterion.CriterionOptions;
+            if (alternativeValue.NumericValue.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"Categorical criterion '{criterion.Name}' cannot use a numeric value.");
+            }
+
+            if (!alternativeValue.CriterionOptionId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    $"Categorical criterion '{criterion.Name}' has no selected option.");
+            }
+
+            var options = criterion.CriterionOptions
+                .OrderBy(co => co.Rank)
+                .ToList();
+
+            if (options.Count < 2)
+            {
+                throw new InvalidOperationException(
+                    $"Categorical criterion '{criterion.Name}' must have at least two options.");
+            }
+
+            ValidateCriterionOptions(options);
 
             var selectedOption = options.FirstOrDefault(
-                co => co.Id == alternativeValue.CriterionOptionId);
+                co => co.Id == alternativeValue.CriterionOptionId.Value);
 
             if (selectedOption == null)
             {
                 throw new InvalidOperationException(
-                    "Selected criterion option was not found.");
-            }
-
-            int rank = selectedOption.Rank;
-            int totalRanks = options.Count;
-
-            if (totalRanks < 2)
-            {
-                throw new InvalidOperationException(
-                    "At least two ranks are required.");
-            }
-
-            if (rank < 1 || rank > totalRanks)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(rank),
-                    "Rank must be between 1 and the total number of ranks.");
+                    $"Selected criterion option does not belong to criterion '{criterion.Name}'.");
             }
 
             decimal rating =
                 5m -
-                ((rank - 1) * 4m /
-                (totalRanks - 1));
+                ((selectedOption.Rank - 1) * 4m /
+                (options.Count - 1));
 
-            return Math.Round(rating, 2);
+            return Math.Round(
+                Math.Clamp(rating, 1m, 5m),
+                2);
+        }
+
+        private static void ValidateNumericalRule(
+            CriterionNumericalRule rule)
+        {
+            if (rule.MaxValue <= rule.MinValue)
+            {
+                throw new ArgumentException(
+                    "Numerical rule max value must be greater than min value.");
+            }
+
+            switch (rule.NumericType)
+            {
+                case NumericType.Scope:
+
+                    if (!rule.Direction.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Direction is required for Scope rating.");
+                    }
+
+                    if (rule.TargetValue.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Target value must not be set for Scope rating.");
+                    }
+
+                    break;
+
+                case NumericType.Interval:
+
+                    if (rule.Direction.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Direction must not be set for Interval rating.");
+                    }
+
+                    if (rule.TargetValue.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Target value must not be set for Interval rating.");
+                    }
+
+                    if (rule.IntervalRanges == null ||
+                        rule.IntervalRanges.Count < 2)
+                    {
+                        throw new InvalidOperationException(
+                            "At least two interval ranges are required.");
+                    }
+
+                    break;
+
+                case NumericType.TargetValue:
+
+                    if (!rule.TargetValue.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Target value is required for Target Value rating.");
+                    }
+
+                    if (rule.Direction.HasValue)
+                    {
+                        throw new InvalidOperationException(
+                            "Direction must not be set for Target Value rating.");
+                    }
+
+                    if (rule.TargetValue.Value < rule.MinValue ||
+                        rule.TargetValue.Value > rule.MaxValue)
+                    {
+                        throw new ArgumentException(
+                            "Target value must be within the specified bounds.");
+                    }
+
+                    break;
+
+                default:
+
+                    throw new ArgumentOutOfRangeException(
+                        nameof(rule.NumericType),
+                        rule.NumericType,
+                        "Unsupported numeric type.");
+            }
+        }
+
+        private static void ValidateIntervalRanges(
+            List<IntervalRange> ranges)
+        {
+            var expectedRank = 1;
+
+            foreach (var range in ranges)
+            {
+                if (range.Rank != expectedRank)
+                {
+                    throw new InvalidOperationException(
+                        "Interval range ranks must be consecutive starting from 1.");
+                }
+
+                if (range.MinValue >= range.MaxValue)
+                {
+                    throw new ArgumentException(
+                        "Each interval range must have a minimum value smaller than its maximum value.");
+                }
+
+                expectedRank++;
+            }
+
+            for (int i = 1; i < ranges.Count; i++)
+            {
+                if (ranges[i].MinValue <=
+                    ranges[i - 1].MaxValue)
+                {
+                    throw new ArgumentException(
+                        "Interval ranges must not overlap.");
+                }
+            }
+        }
+
+        private static void ValidateCriterionOptions(
+            List<CriterionOption> options)
+        {
+            var expectedRank = 1;
+
+            foreach (var option in options)
+            {
+                if (option.Rank != expectedRank)
+                {
+                    throw new InvalidOperationException(
+                        "Criterion option ranks must be consecutive starting from 1.");
+                }
+
+                expectedRank++;
+            }
         }
     }
 }

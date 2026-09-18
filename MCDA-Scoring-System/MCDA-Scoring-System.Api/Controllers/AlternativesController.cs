@@ -10,7 +10,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
     {
         private readonly IAlternativeService _alternativeService;
 
-        public AlternativesController(IAlternativeService alternativeService)
+        public AlternativesController(
+            IAlternativeService alternativeService)
         {
             _alternativeService = alternativeService;
         }
@@ -22,16 +23,27 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
             try
             {
                 var createdAlternative =
-                    await _alternativeService.CreateAlternativeAsync(dto);
+                    await _alternativeService
+                        .CreateAlternativeAsync(dto);
 
                 return CreatedAtAction(
                     nameof(GetById),
                     new { id = createdAlternative.Id },
                     createdAlternative);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    Error = ex.Message
+                });
+            }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
             }
         }
 
@@ -39,13 +51,15 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var alternative =
-                await _alternativeService.GetAlternativeByIdAsync(id);
+                await _alternativeService
+                    .GetAlternativeByIdAsync(id);
 
             if (alternative == null)
             {
                 return NotFound(new
                 {
-                    Error = $"Alternative with ID {id} not found."
+                    Error =
+                        $"Alternative with ID {id} not found."
                 });
             }
 
@@ -56,7 +70,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         public async Task<IActionResult> GetAll()
         {
             var alternatives =
-                await _alternativeService.GetAllAlternativesAsync();
+                await _alternativeService
+                    .GetAllAlternativesAsync();
 
             return Ok(alternatives);
         }
@@ -75,11 +90,17 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return NotFound(new
+                {
+                    Error = ex.Message
+                });
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
             }
         }
 
@@ -97,29 +118,54 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
             }
             catch (KeyNotFoundException ex)
             {
-                return NotFound(new { Error = ex.Message });
+                return NotFound(new
+                {
+                    Error = ex.Message
+                });
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
             }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAlternative(int id)
         {
-            var result =
-                await _alternativeService.DeleteAlternativeAsync(id);
+            try
+            {
+                var result =
+                    await _alternativeService
+                        .DeleteAlternativeAsync(id);
 
-            if (!result)
+                if (!result)
+                {
+                    return NotFound(new
+                    {
+                        Error =
+                            $"Alternative with ID {id} not found."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound(new
                 {
-                    Error = $"Alternative with ID {id} not found."
+                    Error = ex.Message
                 });
             }
-
-            return NoContent();
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
+            }
         }
     }
 }

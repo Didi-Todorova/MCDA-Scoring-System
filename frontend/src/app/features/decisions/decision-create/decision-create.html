@@ -1,0 +1,113 @@
+<div class="create-page">
+  <div class="create-container">
+
+    <a
+      routerLink="/decisions"
+      class="back-link"
+    >
+      ← Back to Decisions
+    </a>
+
+    <div class="create-card">
+
+      <div class="form-header">
+        <span class="eyebrow">New decision</span>
+
+        <h1>Create a Decision</h1>
+
+        <p>
+          Start by defining your decision and choosing
+          how its criteria will be weighted.
+        </p>
+      </div>
+
+      <form
+        [formGroup]="decisionForm"
+        (ngSubmit)="createDecision()"
+      >
+
+        <div class="form-field">
+          <label for="name">
+            Decision name
+          </label>
+
+          <input
+            id="name"
+            type="text"
+            formControlName="name"
+            placeholder="e.g. Laptop Selection"
+            maxlength="200"
+          />
+
+          @if (
+            decisionForm.controls.name.touched &&
+            decisionForm.controls.name.invalid
+          ) {
+            <div class="field-error">
+              Please enter a decision name.
+            </div>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="weightingMethod">
+            Weighting method
+          </label>
+
+          <select
+            id="weightingMethod"
+            formControlName="weightingMethod"
+          >
+            <option
+              [ngValue]="WeightingMethod.PercentageAllocation"
+            >
+              Percentage Allocation
+            </option>
+
+            <option
+              [ngValue]="WeightingMethod.DirectRanking"
+            >
+              Direct Ranking
+            </option>
+          </select>
+
+          <p class="field-hint">
+            You can configure the actual criterion weights
+            in the Weighting step.
+          </p>
+        </div>
+
+        @if (errorMessage) {
+          <div class="error-message">
+            {{ errorMessage }}
+          </div>
+        }
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="isSaving"
+            (click)="cancel()"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            class="primary-button"
+            [disabled]="isSaving"
+          >
+            @if (isSaving) {
+              Creating...
+            } @else {
+              Create Decision
+            }
+          </button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>

@@ -16,6 +16,13 @@ export const routes: Routes = [
   },
 
   {
+  path: 'decisions/new',
+    loadComponent: () =>
+      import('./features/decisions/decision-create/decision-create')
+        .then(m => m.DecisionCreateComponent)
+  },
+
+  {
     path: 'decisions/:id/wizard',
     loadComponent: () =>
       import('./features/decisions/decision-wizard/decision-wizard')

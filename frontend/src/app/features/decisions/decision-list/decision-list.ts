@@ -1,28 +1,56 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnInit,
+  inject
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 
-import { Decision, WeightingMethod } from '../../../core/models/decision.model';
-import { DecisionService } from '../../../core/services/decision.service';
+import {
+  Decision
+} from '../../../core/models/decision.model';
 
-import { Router } from '@angular/router';
+import {
+  DecisionService
+} from '../../../core/services/decision.service';
+
+import {
+  Router
+} from '@angular/router';
 
 @Component({
   selector: 'app-decision-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule
+  ],
   templateUrl: './decision-list.html',
   styleUrl: './decision-list.css'
 })
-export class DecisionListComponent implements OnInit {
-  private readonly decisionService = inject(DecisionService);
-  private readonly changeDetector = inject(ChangeDetectorRef);
-  private readonly router = inject(Router);
+export class DecisionListComponent
+  implements OnInit {
+
+  private readonly decisionService =
+    inject(DecisionService);
+
+  private readonly changeDetector =
+    inject(ChangeDetectorRef);
+
+  private readonly router =
+    inject(Router);
 
   decisions: Decision[] = [];
+
   isLoading = false;
+
   errorMessage = '';
 
-  readonly WeightingMethod = WeightingMethod;
+  decisionToDelete: Decision | null = null;
+
+  isDeleting = false;
+
+  deleteErrorMessage = '';
 
   ngOnInit(): void {
     this.loadDecisions();
@@ -32,58 +60,135 @@ export class DecisionListComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
 
-    this.decisionService.getDecisions().subscribe({
-      next: (decisions) => {
-        console.log('Decisions received:', decisions);
+    this.decisionService
+      .getDecisions()
+      .subscribe({
 
-        this.decisions = decisions;
-        this.isLoading = false;
+        next: (decisions) => {
 
-        console.log('isLoading:', this.isLoading);
-        console.log('errorMessage:', this.errorMessage);
-        console.log('decisions:', this.decisions);
+          console.log(
+            'Decisions received:',
+            decisions
+          );
 
-        this.changeDetector.markForCheck();
-      },
-      error: (error) => {
-        console.error('Failed to load decisions', error);
+          this.decisions = decisions;
 
-        this.errorMessage =
-          'Unable to load decisions. Please try again.';
+          this.isLoading = false;
 
-        this.isLoading = false;
+          this.changeDetector.markForCheck();
+        },
 
-        this.changeDetector.markForCheck();
-      }
-    });
-  }
+        error: (error) => {
 
-  getWeightingMethodName(method: WeightingMethod): string {
-    switch (method) {
-      case WeightingMethod.PercentageAllocation:
-        return 'Percentage Allocation';
+          console.error(
+            'Failed to load decisions',
+            error
+          );
 
-      case WeightingMethod.DirectRanking:
-        return 'Direct Ranking';
+          this.errorMessage =
+            'Unable to load decisions. Please try again.';
 
-      case WeightingMethod.SwingWeighting:
-        return 'Swing Weighting';
+          this.isLoading = false;
 
-      default:
-        return 'Unknown';
-    }
+          this.changeDetector.markForCheck();
+        }
+
+      });
   }
 
   createDecision(): void {
-  this.router.navigate(['/decisions/new']);
+    this.router.navigate([
+      '/decisions/new'
+    ]);
   }
 
-  openDecision(decision: Decision): void {
+  openDecision(
+    decision: Decision
+  ): void {
+    this.router.navigate([
+      '/decisions',
+      decision.id,
+      'wizard',
+      'preview'
+    ]);
+  }
+
+  editDecision(
+    decision: Decision
+  ): void {
     this.router.navigate([
       '/decisions',
       decision.id,
       'wizard',
       'basic'
     ]);
+  }
+
+  confirmDelete(
+    decision: Decision
+  ): void {
+    this.decisionToDelete = decision;
+
+    this.deleteErrorMessage = '';
+  }
+
+  cancelDelete(): void {
+    if (this.isDeleting) {
+      return;
+    }
+
+    this.decisionToDelete = null;
+
+    this.deleteErrorMessage = '';
+  }
+
+  deleteDecision(): void {
+    if (!this.decisionToDelete) {
+      return;
+    }
+
+    const decisionId =
+      this.decisionToDelete.id;
+
+    this.isDeleting = true;
+
+    this.deleteErrorMessage = '';
+
+    this.decisionService
+      .deleteDecision(decisionId)
+      .subscribe({
+
+        next: () => {
+
+          this.decisions =
+            this.decisions.filter(
+              decision =>
+                decision.id !== decisionId
+            );
+
+          this.decisionToDelete = null;
+
+          this.isDeleting = false;
+
+          this.changeDetector.markForCheck();
+        },
+
+        error: (error) => {
+
+          console.error(
+            'Failed to delete decision',
+            error
+          );
+
+          this.deleteErrorMessage =
+            error?.error?.Error ??
+            'Unable to delete the decision. Please try again.';
+
+          this.isDeleting = false;
+
+          this.changeDetector.markForCheck();
+        }
+
+      });
   }
 }

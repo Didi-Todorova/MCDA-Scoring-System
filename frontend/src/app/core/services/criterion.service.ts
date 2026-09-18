@@ -7,6 +7,14 @@ import {
   CreateCriterionRequest
 } from '../models/criterion.model';
 
+export interface UpdateCriterionRequest {
+  decisionId: number;
+  name: string;
+  criterionType: Criterion['criterionType'];
+  unit: string | null;
+  weight: number | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -27,6 +35,16 @@ export class CriterionService {
       this.apiUrl,
       request
     );
+  }
+
+  updateCriterion( 
+    id: number, 
+    request: UpdateCriterionRequest 
+  ): Observable<Criterion> { 
+    return this.http.put<Criterion>( 
+      `${this.apiUrl}/${id}`, 
+      request 
+    ); 
   }
 
   deleteCriterion(id: number): Observable<void> {

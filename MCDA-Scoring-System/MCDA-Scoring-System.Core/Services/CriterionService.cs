@@ -26,6 +26,20 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             ValidateCriterionType(dto.CriterionType);
             ValidateWeight(dto.Weight);
 
+            var normalizedName = dto.Name.Trim();
+
+            var duplicateExists = await _repo
+                .AllReadonly<Criterion>()
+                .AnyAsync(c =>
+                    c.DecisionId == dto.DecisionId &&
+                    c.Name.ToLower() == normalizedName.ToLower());
+
+            if (duplicateExists)
+            {
+                throw new ArgumentException(
+                    "A criterion with this name already exists in this decision.");
+            }
+
             var decision = await _repo.GetByIdAsync<Decision>(dto.DecisionId);
 
             if (decision == null)
@@ -35,7 +49,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             var criterion = new Criterion
             {
                 DecisionId = dto.DecisionId,
-                Name = dto.Name.Trim(),
+                Name = normalizedName,
                 CriterionType = dto.CriterionType,
                 Unit = dto.Unit?.Trim(),
                 Weight = dto.Weight
@@ -61,7 +75,18 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             if (criterion == null)
                 return false;
 
+            var alternativeValues = await _repo
+                .All<AlternativeValue>()
+                .Where(av => av.CriterionId == id)
+                .ToListAsync();
+
+            foreach (var alternativeValue in alternativeValues)
+            {
+                _repo.Delete(alternativeValue);
+            }
+
             _repo.Delete(criterion);
+
             await _repo.SaveChangesAsync();
 
             return true;
@@ -139,6 +164,26 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     throw new KeyNotFoundException(
                         $"Decision with ID {decisionId} not found.");
 
+                var hasAlternativeValues = await _repo
+                    .AllReadonly<AlternativeValue>()
+                    .AnyAsync(av => av.CriterionId == id);
+
+                var hasOptions = await _repo
+                    .AllReadonly<CriterionOption>()
+                    .AnyAsync(co => co.CriterionId == id);
+
+                var hasNumericalRule = await _repo
+                    .AllReadonly<CriterionNumericalRule>()
+                    .AnyAsync(nr => nr.CriterionId == id);
+
+                if (hasAlternativeValues ||
+                    hasOptions ||
+                    hasNumericalRule)
+                {
+                    throw new ArgumentException(
+                        "A configured criterion cannot be moved to another decision.");
+                }
+
                 criterion.DecisionId = decisionId;
             }
 
@@ -171,8 +216,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         public async Task UpdateCriterionAsync(
-            int id,
-            UpdateCriterionDto dto)
+    int id,
+    UpdateCriterionDto dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -194,6 +239,21 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new KeyNotFoundException(
                     $"Decision with ID {dto.DecisionId} not found.");
 
+            var normalizedName = dto.Name.Trim();
+
+            var duplicateExists = await _repo
+                .AllReadonly<Criterion>()
+                .AnyAsync(c =>
+                    c.Id != id &&
+                    c.DecisionId == dto.DecisionId &&
+                    c.Name.ToLower() == normalizedName.ToLower());
+
+            if (duplicateExists)
+            {
+                throw new ArgumentException(
+                    "A criterion with this name already exists in this decision.");
+            }
+
             if (dto.CriterionType != criterion.CriterionType)
             {
                 var hasOptions = await _repo
@@ -211,8 +271,31 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 }
             }
 
+            if (criterion.DecisionId != dto.DecisionId)
+            {
+                var hasAlternativeValues = await _repo
+                    .AllReadonly<AlternativeValue>()
+                    .AnyAsync(av => av.CriterionId == id);
+
+                var hasOptions = await _repo
+                    .AllReadonly<CriterionOption>()
+                    .AnyAsync(co => co.CriterionId == id);
+
+                var hasNumericalRule = await _repo
+                    .AllReadonly<CriterionNumericalRule>()
+                    .AnyAsync(nr => nr.CriterionId == id);
+
+                if (hasAlternativeValues ||
+                    hasOptions ||
+                    hasNumericalRule)
+                {
+                    throw new ArgumentException(
+                        "A configured criterion cannot be moved to another decision.");
+                }
+            }
+
             criterion.DecisionId = dto.DecisionId;
-            criterion.Name = dto.Name.Trim();
+            criterion.Name = normalizedName;
             criterion.CriterionType = dto.CriterionType;
             criterion.Unit = string.IsNullOrWhiteSpace(dto.Unit)
                 ? null
@@ -225,16 +308,22 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         private static void ValidateName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
+            {
                 throw new ArgumentException(
                     "Criterion name is required.");
+            }
+
+            if (name.Trim().Length > 200)
+            {
+                throw new ArgumentException(
+                    "Criterion name cannot exceed 200 characters.");
+            }
         }
 
         private static void ValidateCriterionType(
-            CriterionType criterionType)
+    CriterionType criterionType)
         {
-            if (!Enum.IsDefined(
-                    typeof(CriterionType),
-                    criterionType))
+            if (!Enum.IsDefined(criterionType))
             {
                 throw new ArgumentException(
                     "Invalid criterion type.");
@@ -243,10 +332,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
         private static void ValidateWeight(decimal? weight)
         {
-            if (!weight.HasValue)
-                return;
-
-            if (weight.Value < 0 || weight.Value > 1)
+            if (weight.HasValue &&
+                (weight.Value < 0 || weight.Value > 1))
             {
                 throw new ArgumentException(
                     "Criterion weight must be between 0 and 1.");

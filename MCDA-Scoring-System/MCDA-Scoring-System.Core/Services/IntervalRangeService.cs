@@ -47,7 +47,10 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new ArgumentException(
                     "This numerical rule already has interval ranges.");
 
-            ValidateRanges(dto.Ranges);
+            ValidateRanges(
+    dto.Ranges,
+    rule.MinValue,
+    rule.MaxValue);
 
             var ranges = dto.Ranges
                 .Select((range, index) => new IntervalRange
@@ -175,7 +178,10 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     "The submitted interval ranges do not match " +
                     "the existing ranges.");
 
-            ValidateRanges(dto.Ranges);
+            ValidateRanges(
+            dto.Ranges,
+            rule.MinValue,
+            rule.MaxValue);
 
             var rangesById = ranges.ToDictionary(r => r.Id);
 
@@ -230,63 +236,98 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         private static void ValidateRanges(
-            IEnumerable<IntervalRangeInputDto> ranges)
+    IEnumerable<IntervalRangeInputDto> ranges,
+    decimal ruleMinValue,
+    decimal ruleMaxValue)
         {
             var rangeList = ranges.ToList();
 
-            foreach (var range in rangeList)
-            {
-                if (range.MinValue >= range.MaxValue)
-                {
-                    throw new ArgumentException(
-                        "Each interval range must have a " +
-                        "minimum value smaller than its maximum value.");
-                }
-            }
-
-            ValidateNoOverlap(
+            ValidateRanges(
                 rangeList.Select(r =>
-                    (r.MinValue, r.MaxValue)));
+                    (r.MinValue, r.MaxValue)),
+                ruleMinValue,
+                ruleMaxValue);
         }
 
         private static void ValidateRanges(
-            IEnumerable<IntervalRangeUpdateDto> ranges)
+            IEnumerable<IntervalRangeUpdateDto> ranges,
+            decimal ruleMinValue,
+            decimal ruleMaxValue)
         {
             var rangeList = ranges.ToList();
 
-            foreach (var range in rangeList)
-            {
-                if (range.MinValue >= range.MaxValue)
-                {
-                    throw new ArgumentException(
-                        "Each interval range must have a " +
-                        "minimum value smaller than its maximum value.");
-                }
-            }
-
-            ValidateNoOverlap(
+            ValidateRanges(
                 rangeList.Select(r =>
-                    (r.MinValue, r.MaxValue)));
+                    (r.MinValue, r.MaxValue)),
+                ruleMinValue,
+                ruleMaxValue);
         }
 
-        private static void ValidateNoOverlap(
-            IEnumerable<(decimal MinValue, decimal MaxValue)> ranges)
+        private static void ValidateRanges(
+            IEnumerable<(decimal MinValue, decimal MaxValue)> ranges,
+            decimal ruleMinValue,
+            decimal ruleMaxValue)
         {
             var orderedRanges = ranges
                 .OrderBy(r => r.MinValue)
                 .ToList();
 
-            for (int i = 1; i < orderedRanges.Count; i++)
+            if (orderedRanges.Count < 2)
             {
-                var previous = orderedRanges[i - 1];
+                throw new ArgumentException(
+                    "At least two interval ranges are required.");
+            }
+
+            for (int i = 0; i < orderedRanges.Count; i++)
+            {
                 var current = orderedRanges[i];
+
+                if (current.MinValue >= current.MaxValue)
+                {
+                    throw new ArgumentException(
+                        "Each interval range must have a minimum value smaller than its maximum value.");
+                }
+
+                if (current.MinValue < ruleMinValue ||
+                    current.MaxValue > ruleMaxValue)
+                {
+                    throw new ArgumentException(
+                        $"Interval ranges must stay within the numerical rule range of {ruleMinValue} to {ruleMaxValue}.");
+                }
+
+                if (i == 0)
+                {
+                    if (current.MinValue != ruleMinValue)
+                    {
+                        throw new ArgumentException(
+                            $"Interval ranges must start at the numerical rule minimum of {ruleMinValue}.");
+                    }
+
+                    continue;
+                }
+
+                var previous = orderedRanges[i - 1];
 
                 if (current.MinValue < previous.MaxValue)
                 {
                     throw new ArgumentException(
                         "Interval ranges cannot overlap.");
                 }
+
+                if (current.MinValue > previous.MaxValue)
+                {
+                    throw new ArgumentException(
+                        "Interval ranges must cover the complete numerical rule range without gaps.");
+                }
             }
-        }
+
+            var lastRange = orderedRanges[^1];
+
+            if (lastRange.MaxValue != ruleMaxValue)
+            {
+                throw new ArgumentException(
+                    $"Interval ranges must end at the numerical rule maximum of {ruleMaxValue}.");
+            }
+        }      
     }
 }

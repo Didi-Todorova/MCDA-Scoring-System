@@ -108,18 +108,35 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result =
-                await _criterionService.DeleteCriterionAsync(id);
+            try
+            {
+                var result =
+                    await _criterionService.DeleteCriterionAsync(id);
 
-            if (!result)
+                if (!result)
+                {
+                    return NotFound(new
+                    {
+                        Error = $"Criterion with ID {id} not found."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound(new
                 {
-                    Error = $"Criterion with ID {id} not found."
+                    Error = ex.Message
                 });
             }
-
-            return NoContent();
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
+            }
         }
     }
 }

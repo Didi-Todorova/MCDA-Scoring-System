@@ -18,7 +18,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 
         [HttpPost]
         public async Task<IActionResult> Create(
-            [FromBody] CreateCriterionOptionsDto dto)
+    [FromBody] CreateCriterionOptionsDto dto)
         {
             try
             {
@@ -28,9 +28,19 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
 
                 return Ok(criterionOptions);
             }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new
+                {
+                    Error = ex.Message
+                });
+            }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { Error = ex.Message });
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
             }
         }
 
@@ -108,24 +118,39 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Api.Controllers
                 return BadRequest(new { Error = ex.Message });
             }
         }
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result =
-                await _criterionOptionService
-                    .DeleteCriterionOptionAsync(id);
+            try
+            {
+                var result =
+                    await _criterionOptionService
+                        .DeleteCriterionOptionAsync(id);
 
-            if (!result)
+                if (!result)
+                {
+                    return NotFound(new
+                    {
+                        Error = $"Criterion option with ID {id} not found."
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (KeyNotFoundException ex)
             {
                 return NotFound(new
                 {
-                    Error =
-                        $"Criterion option with ID {id} not found."
+                    Error = ex.Message
                 });
             }
-
-            return NoContent();
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    Error = ex.Message
+                });
+            }
         }
     }
 }

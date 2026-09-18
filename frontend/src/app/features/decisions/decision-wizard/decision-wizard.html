@@ -40,28 +40,19 @@
           [class.completed]="isStepCompleted(step.number)"
         >
 
-          <button
-            type="button"
-            class="step-button"
-            [disabled]="step.number > currentStep"
-            (click)="goToStep(step.route)"
-          >
-
+          <div class="step-button">
             <span class="step-number">
-
               @if (isStepCompleted(step.number)) {
                 ✓
               } @else {
                 {{ step.number }}
               }
-
             </span>
 
             <span class="step-title">
               {{ step.title }}
             </span>
-
-          </button>
+          </div>
 
           @if (step.number < steps.length) {
             <span class="step-line"></span>
@@ -77,30 +68,7 @@
 
       <router-outlet></router-outlet>
 
-      <div class="wizard-navigation">
-
-        <button
-          type="button"
-          class="secondary-button"
-          (click)="goBack()"
-        >
-          ← Back
-        </button>
-
-        @if (currentStep < steps.length) {
-
-          <button
-            type="button"
-            class="primary-button"
-            (click)="goNext()"
-          >
-            Next →
-          </button>
-
-        }
-
-      </div>
-
+      
     </section>
 
   }

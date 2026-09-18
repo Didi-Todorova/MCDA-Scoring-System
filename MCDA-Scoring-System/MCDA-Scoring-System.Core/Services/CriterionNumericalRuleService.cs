@@ -37,7 +37,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new ArgumentException(
                     "This criterion already has a numerical rule.");
 
-            ValidateRule(
+            ValidateNumericRule(
                 dto.NumericType,
                 dto.MinValue,
                 dto.MaxValue,
@@ -115,8 +115,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
         }
 
         public async Task PatchCriterionNumericalRuleAsync(
-            int id,
-            PatchCriterionNumericalDto dto)
+    int id,
+    PatchCriterionNumericalDto dto)
         {
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
@@ -127,42 +127,50 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new KeyNotFoundException(
                     $"Criterion Numerical Rule with ID {id} not found.");
 
-            var criterionId = dto.CriterionId ?? rule.CriterionId;
+            if (dto.CriterionId.HasValue &&
+                dto.CriterionId.Value != rule.CriterionId)
+            {
+                throw new ArgumentException(
+                    "A numerical rule cannot be moved to another criterion.");
+            }
+
             var numericType = dto.NumericType ?? rule.NumericType;
             var minValue = dto.MinValue ?? rule.MinValue;
             var maxValue = dto.MaxValue ?? rule.MaxValue;
             var targetValue = dto.TargetValue ?? rule.TargetValue;
             var direction = dto.Direction ?? rule.Direction;
 
-            var criterion = await _repo.GetByIdAsync<Criterion>(criterionId);
+            var criterion = await _repo.GetByIdAsync<Criterion>(
+                rule.CriterionId);
 
             if (criterion == null)
                 throw new KeyNotFoundException(
-                    $"Criterion with ID {criterionId} not found.");
+                    $"Criterion with ID {rule.CriterionId} not found.");
 
             ValidateCriterionType(criterion);
 
-            if (criterionId != rule.CriterionId)
+            if (rule.NumericType == NumericType.Interval &&
+                numericType != NumericType.Interval)
             {
-                var existingRule = await _repo
-                    .AllReadonly<CriterionNumericalRule>()
+                var hasRanges = await _repo
+                    .AllReadonly<IntervalRange>()
                     .AnyAsync(r =>
-                        r.Id != id &&
-                        r.CriterionId == criterionId);
+                        r.CriterionNumericalRuleId == rule.Id);
 
-                if (existingRule)
+                if (hasRanges)
+                {
                     throw new ArgumentException(
-                        "This criterion already has a numerical rule.");
+                        "An interval numerical rule with existing interval ranges cannot be changed to another numeric type.");
+                }
             }
 
-            ValidateRule(
+            ValidateNumericRule(
                 numericType,
                 minValue,
                 maxValue,
                 targetValue,
                 direction);
 
-            rule.CriterionId = criterionId;
             rule.NumericType = numericType;
             rule.MinValue = minValue;
             rule.MaxValue = maxValue;
@@ -187,30 +195,39 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
 
             var criterion = await _repo.GetByIdAsync<Criterion>(dto.CriterionId);
 
+            if (rule.CriterionId != dto.CriterionId)
+            {
+                throw new ArgumentException(
+                    "A numerical rule cannot be moved to another criterion.");
+            }
+
             if (criterion == null)
                 throw new KeyNotFoundException(
                     $"Criterion with ID {dto.CriterionId} not found.");
 
             ValidateCriterionType(criterion);
 
-            var existingRule = await _repo
-                .AllReadonly<CriterionNumericalRule>()
-                .AnyAsync(r =>
-                    r.Id != id &&
-                    r.CriterionId == dto.CriterionId);
+            if (rule.NumericType == NumericType.Interval && dto.NumericType != NumericType.Interval)
+            {
+                var hasRanges = await _repo
+                    .AllReadonly<IntervalRange>()
+                    .AnyAsync(r =>
+                        r.CriterionNumericalRuleId == rule.Id);
 
-            if (existingRule)
-                throw new ArgumentException(
-                    "This criterion already has a numerical rule.");
+                if (hasRanges)
+                {
+                    throw new ArgumentException(
+                        "An interval numerical rule with existing interval ranges cannot be changed to another numeric type.");
+                }
+            }
 
-            ValidateRule(
+            ValidateNumericRule(
                 dto.NumericType,
                 dto.MinValue,
                 dto.MaxValue,
                 dto.TargetValue,
                 dto.Direction);
 
-            rule.CriterionId = dto.CriterionId;
             rule.NumericType = dto.NumericType;
             rule.MinValue = dto.MinValue;
             rule.MaxValue = dto.MaxValue;
@@ -229,24 +246,23 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             }
         }
 
-        private static void ValidateRule(
-            NumericType numericType,
-            decimal minValue,
-            decimal maxValue,
-            decimal? targetValue,
-            Direction? direction)
+        private static void ValidateNumericRule(
+    NumericType numericType,
+    decimal minValue,
+    decimal maxValue,
+    decimal? targetValue,
+    Direction? direction)
         {
-            if (!Enum.IsDefined(typeof(NumericType), numericType))
-                throw new ArgumentException("Invalid numeric type.");
+            if (!Enum.IsDefined(numericType))
+            {
+                throw new ArgumentException(
+                    "Invalid numeric type.");
+            }
 
             if (minValue >= maxValue)
+            {
                 throw new ArgumentException(
                     "Minimum value must be smaller than maximum value.");
-
-            if (direction.HasValue &&
-                !Enum.IsDefined(typeof(Direction), direction.Value))
-            {
-                throw new ArgumentException("Invalid direction.");
             }
 
             switch (numericType)
@@ -254,43 +270,55 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 case NumericType.Scope:
 
                     if (!direction.HasValue)
+                    {
                         throw new ArgumentException(
-                            "Direction is required for a scope criterion.");
+                            "Direction is required for a scope numerical rule.");
+                    }
 
                     if (targetValue.HasValue)
+                    {
                         throw new ArgumentException(
-                            "Target value cannot be provided for a scope criterion.");
+                            "Target value cannot be provided for a scope numerical rule.");
+                    }
 
                     break;
 
                 case NumericType.Interval:
 
-                    if (targetValue.HasValue)
-                        throw new ArgumentException(
-                            "Target value cannot be provided for an interval criterion.");
-
                     if (direction.HasValue)
+                    {
                         throw new ArgumentException(
-                            "Direction cannot be provided for an interval criterion.");
+                            "Direction cannot be provided for an interval numerical rule.");
+                    }
+
+                    if (targetValue.HasValue)
+                    {
+                        throw new ArgumentException(
+                            "Target value cannot be provided for an interval numerical rule.");
+                    }
 
                     break;
 
                 case NumericType.TargetValue:
 
                     if (!targetValue.HasValue)
+                    {
                         throw new ArgumentException(
-                            "Target value is required for a target-value criterion.");
+                            "Target value is required for a target-value numerical rule.");
+                    }
+
+                    if (direction.HasValue)
+                    {
+                        throw new ArgumentException(
+                            "Direction cannot be provided for a target-value numerical rule.");
+                    }
 
                     if (targetValue.Value < minValue ||
                         targetValue.Value > maxValue)
                     {
                         throw new ArgumentException(
-                            "Target value must be within the minimum and maximum values.");
+                            "Target value must be between the minimum and maximum values.");
                     }
-
-                    if (direction.HasValue)
-                        throw new ArgumentException(
-                            "Direction cannot be provided for a target-value criterion.");
 
                     break;
 
