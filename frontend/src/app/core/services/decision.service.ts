@@ -43,8 +43,8 @@ export class DecisionService {
   updateDecision(
     id: number,
     request: UpdateDecisionRequest
-  ): Observable<Decision> {
-    return this.http.put<Decision>(
+  ): Observable<void> {
+    return this.http.put<void>(
       `${this.apiUrl}/${id}`,
       request
     );

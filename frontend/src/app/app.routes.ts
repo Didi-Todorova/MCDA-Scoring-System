@@ -16,10 +16,25 @@ export const routes: Routes = [
   },
 
   {
-  path: 'decisions/new',
+    path: 'decisions/new/wizard',
     loadComponent: () =>
-      import('./features/decisions/decision-create/decision-create')
-        .then(m => m.DecisionCreateComponent)
+      import('./features/decisions/decision-wizard/decision-wizard')
+        .then(m => m.DecisionWizardComponent),
+
+    children: [
+      {
+        path: '',
+        redirectTo: 'basic',
+        pathMatch: 'full'
+      },
+
+      {
+        path: 'basic',
+        loadComponent: () =>
+          import('./features/decisions/decision-wizard/steps/basic-information/basic-information')
+            .then(m => m.BasicInformationComponent)
+      }
+    ]
   },
 
   {

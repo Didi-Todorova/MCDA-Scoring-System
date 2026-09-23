@@ -40,6 +40,7 @@ export class DecisionWizardComponent implements OnInit {
 
   decision: Decision | null = null;
 
+  isNewDecision = false;
   isLoading = true;
   errorMessage = '';
 
@@ -79,18 +80,32 @@ export class DecisionWizardComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    const decisionId = Number(
-      this.route.snapshot.paramMap.get('id')
-    );
+    const decisionId =
+      this.route.snapshot.paramMap.get('id');
 
+    /*
+     * /decisions/new/wizard
+     *
+     * There is intentionally no decision ID yet.
+     * Basic Information will create the decision.
+     */
     if (!decisionId) {
+      this.isNewDecision = true;
+      this.isLoading = false;
+      return;
+    }
+
+    const id = Number(decisionId);
+
+    if (!Number.isInteger(id) || id <= 0) {
       this.errorMessage = 'Invalid decision ID.';
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
     }
 
-    this.loadDecision(decisionId);
+    this.isNewDecision = false;
+    this.loadDecision(id);
   }
 
   private loadDecision(id: number): void {
@@ -106,7 +121,10 @@ export class DecisionWizardComponent implements OnInit {
       },
 
       error: (error) => {
-        console.error('Failed to load decision', error);
+        console.error(
+          'Failed to load decision',
+          error
+        );
 
         this.errorMessage =
           'Failed to load the decision.';
@@ -130,6 +148,14 @@ export class DecisionWizardComponent implements OnInit {
   }
 
   goToStep(stepRoute: string): void {
+    /*
+     * In new-decision mode, only Basic Information
+     * exists until the decision has been created.
+     */
+    if (this.isNewDecision && stepRoute !== 'basic') {
+      return;
+    }
+
     this.router.navigate([stepRoute], {
       relativeTo: this.route
     });
@@ -138,7 +164,7 @@ export class DecisionWizardComponent implements OnInit {
   goBack(): void {
     const current = this.currentStep;
 
-    if (current <= 1) {
+    if (current <= 1 || this.isNewDecision) {
       this.router.navigate(['/decisions']);
       return;
     }
@@ -152,6 +178,14 @@ export class DecisionWizardComponent implements OnInit {
     const current = this.currentStep;
 
     if (current >= this.steps.length) {
+      return;
+    }
+
+    /*
+     * New decisions cannot move past Step 1
+     * until Basic Information creates the decision.
+     */
+    if (this.isNewDecision) {
       return;
     }
 

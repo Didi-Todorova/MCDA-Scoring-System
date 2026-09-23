@@ -12,25 +12,32 @@
       {{ errorMessage }}
     </div>
 
-  } @else if (decision) {
+  } @else {
 
     <div class="wizard-header">
 
       <div class="wizard-heading">
-        <a routerLink="/decisions" class="back-to-decisions">
+
+        <a
+          routerLink="/decisions"
+          class="back-to-decisions"
+        >
           Back to Decisions
         </a>
 
-        <h1>{{ decision.name }}</h1>
+        <h1>
+          {{ isNewDecision ? 'Create Decision' : decision?.name }}
+        </h1>
 
         <p>
           Set up your decision step by step
         </p>
+
       </div>
 
     </div>
 
-    <nav class="wizard-stepper">
+    <nav class="wizard-stepper" aria-label="Decision setup progress">
 
       @for (step of steps; track step.number) {
 
@@ -41,17 +48,21 @@
         >
 
           <div class="step-button">
+
             <span class="step-number">
+
               @if (isStepCompleted(step.number)) {
                 ✓
               } @else {
                 {{ step.number }}
               }
+
             </span>
 
             <span class="step-title">
               {{ step.title }}
             </span>
+
           </div>
 
           @if (step.number < steps.length) {
@@ -65,10 +76,7 @@
     </nav>
 
     <section class="wizard-card">
-
       <router-outlet></router-outlet>
-
-      
     </section>
 
   }

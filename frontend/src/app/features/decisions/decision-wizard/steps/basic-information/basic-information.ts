@@ -11,7 +11,10 @@ import {
   Validators
 } from '@angular/forms';
 
-import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ActivatedRoute,
+  Router
+} from '@angular/router';
 
 import {
   Decision,
@@ -19,7 +22,9 @@ import {
 } from '../../../../../core/models/decision.model';
 
 import {
-  DecisionService
+  CreateDecisionRequest,
+  DecisionService,
+  UpdateDecisionRequest
 } from '../../../../../core/services/decision.service';
 
 @Component({
@@ -41,6 +46,7 @@ export class BasicInformationComponent implements OnInit {
 
   decision: Decision | null = null;
 
+  isNewDecision = false;
   isLoading = true;
   isSaving = false;
   errorMessage = '';
@@ -58,31 +64,28 @@ export class BasicInformationComponent implements OnInit {
   });
 
   ngOnInit(): void {
-  let route = this.route;
+    const decisionId =
+      this.route.parent?.snapshot.paramMap.get('id');
 
-  while (route) {
-    const id = route.snapshot.paramMap.get('id');
-
-    if (id) {
-      const decisionId = Number(id);
-
-      if (decisionId) {
-        this.loadDecision(decisionId);
-        return;
-      }
+    if (!decisionId) {
+      // New decision
+      this.isNewDecision = true;
+      this.isLoading = false;
+      return;
     }
 
-    if (!route.parent) {
-      break;
+    const id = Number(decisionId);
+
+    if (!Number.isInteger(id) || id <= 0) {
+      this.errorMessage = 'Invalid decision ID.';
+      this.isLoading = false;
+      return;
     }
 
-    route = route.parent;
+    // Existing decision
+    this.isNewDecision = false;
+    this.loadDecision(id);
   }
-
-  this.errorMessage = 'Invalid decision ID.';
-  this.isLoading = false;
-  this.changeDetector.markForCheck();
-}
 
   private loadDecision(id: number): void {
     this.isLoading = true;
@@ -91,6 +94,7 @@ export class BasicInformationComponent implements OnInit {
     this.decisionService.getDecision(id).subscribe({
       next: (decision) => {
         this.decision = decision;
+        this.isNewDecision = false;
 
         this.basicForm.patchValue({
           name: decision.name,
@@ -114,44 +118,136 @@ export class BasicInformationComponent implements OnInit {
   }
 
   saveAndContinue(): void {
-    if (this.basicForm.invalid || !this.decision) {
+    if (this.isSaving) {
+      return;
+    }
+
+    if (this.basicForm.invalid) {
       this.basicForm.markAllAsTouched();
       return;
     }
 
     const formValue = this.basicForm.getRawValue();
+    const name = formValue.name.trim();
+
+    if (!name) {
+      this.basicForm.controls.name.setErrors({
+        required: true
+      });
+
+      this.basicForm.controls.name.markAsTouched();
+
+      this.errorMessage =
+        'Please enter a decision name.';
+
+      return;
+    }
 
     this.isSaving = true;
     this.errorMessage = '';
 
-    this.decisionService.updateDecision(
-      this.decision.id,
-      {
-        name: formValue.name.trim(),
+    if (this.isNewDecision) {
+      this.createDecision({
+        name,
         weightingMethod: formValue.weightingMethod
-      }
-    ).subscribe({
+      });
+
+      return;
+    }
+
+    if (!this.decision) {
+      this.errorMessage =
+        'Unable to identify the decision. Please try again.';
+
+      this.isSaving = false;
+      return;
+    }
+
+    this.updateDecision({
+      name,
+      weightingMethod: formValue.weightingMethod
+    });
+  }
+
+  private createDecision(
+    request: CreateDecisionRequest
+  ): void {
+    this.decisionService.createDecision(request).subscribe({
       next: (decision) => {
         this.decision = decision;
         this.isSaving = false;
 
-        this.router.navigate(
-          ['../criteria'],
-          { relativeTo: this.route }
-        );
+        this.router.navigate([
+          '/decisions',
+          decision.id,
+          'wizard',
+          'criteria'
+        ]);
       },
 
       error: (error) => {
-        console.error('Failed to update decision', error);
+        console.error(
+          'Failed to create decision',
+          error
+        );
 
         this.errorMessage =
-          'Unable to save the decision. Please try again.';
+          error?.error?.Error ??
+          'Unable to create the decision. Please try again.';
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
       }
     });
   }
+
+  private updateDecision(
+    request: UpdateDecisionRequest
+  ): void {
+    if (!this.decision) {
+      this.isSaving = false;
+      return;
+    }
+
+    const decisionId = this.decision.id;
+
+    this.decisionService
+      .updateDecision(decisionId, request)
+      .subscribe({
+        next: () => {
+          this.isSaving = false;
+
+          this.router.navigate([
+            '/decisions',
+            decisionId,
+            'wizard',
+            'criteria'
+          ]);
+        },
+
+        error: (error) => {
+          console.error(
+            'Failed to update decision',
+            error
+          );
+
+          this.errorMessage =
+            error?.error?.Error ??
+            'Unable to save the decision. Please try again.';
+
+          this.isSaving = false;
+          this.changeDetector.markForCheck();
+        }
+      });
+  }
+
+    cancel(): void {
+      if (this.isSaving) {
+        return;
+      }
+
+      this.router.navigate(['/decisions']);
+    }
 
   getWeightingMethodDescription(
     method: WeightingMethod

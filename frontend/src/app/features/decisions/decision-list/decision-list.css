@@ -4,6 +4,9 @@
   margin: 0 auto;
   padding: 44px 24px 64px;
   color: #173f35;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(207, 225, 214, 0.5), transparent 28%),
+    #f7faf7;
 }
 
 .page-header {

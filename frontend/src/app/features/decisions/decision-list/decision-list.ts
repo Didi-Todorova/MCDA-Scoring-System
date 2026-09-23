@@ -101,7 +101,10 @@ export class DecisionListComponent
 
   createDecision(): void {
     this.router.navigate([
-      '/decisions/new'
+      '/decisions',
+      'new',
+      'wizard',
+      'basic'
     ]);
   }
 
