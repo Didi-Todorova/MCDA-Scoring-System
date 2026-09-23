@@ -51,7 +51,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             return new DecisionDto(
                 decision.Id,
                 decision.Name,
-                decision.WeightingMethod
+                decision.WeightingMethod,
+                decision.CreatedAt
             );
         }
 
@@ -87,7 +88,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .Select(d => new DecisionDto(
                     d.Id,
                     d.Name,
-                    d.WeightingMethod
+                    d.WeightingMethod,
+                    d.CreatedAt
                 ))
                 .ToListAsync();
         }
@@ -100,7 +102,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 .Select(d => new DecisionDto(
                     d.Id,
                     d.Name,
-                    d.WeightingMethod
+                    d.WeightingMethod,
+                    d.CreatedAt
                 ))
                 .FirstOrDefaultAsync();
         }
