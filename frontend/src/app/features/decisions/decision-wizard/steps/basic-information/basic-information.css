@@ -1,37 +1,57 @@
 .step-content {
-  max-width: 760px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
 }
 
-.step-introduction {
-  margin-bottom: 36px;
-}
+/* =========================
+   Step Introduction
+   ========================= */
+
 
 .step-label {
   display: inline-block;
-  margin-bottom: 8px;
-  color: #6e9a85;
+  margin-bottom: 10px;
+  color: #6f877e;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-h2 {
-  margin: 0 0 10px;
+.step-content h2 {
+  margin: 0 0 8px;
   color: #173f35;
   font-size: 28px;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 
-.step-introduction p {
+.step-header {
+  margin-bottom: 28px;
+}
+
+.step-header h2 {
+  margin: 0 0 8px;
+  color: #173f35;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.intro {
   max-width: 680px;
   margin: 0;
   color: #71837c;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
+/* =========================
+   Form Sections
+   ========================= */
+
 .form-section {
-  margin-bottom: 36px;
+  margin-bottom: 30px;
 }
 
 .form-group {
@@ -42,23 +62,28 @@ h2 {
 
 .form-group label {
   color: #31564b;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .form-group input[type="text"] {
   width: 100%;
   box-sizing: border-box;
-  padding: 13px 14px;
+  padding: 12px 14px;
   border: 1px solid #cfddd4;
   border-radius: 9px;
   outline: none;
-  background: #fff;
+  background: #ffffff;
   color: #173f35;
   font: inherit;
+  font-size: 14px;
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.form-group input[type="text"]::placeholder {
+  color: #9aa9a3;
 }
 
 .form-group input[type="text"]:focus {
@@ -66,27 +91,36 @@ h2 {
   box-shadow: 0 0 0 3px rgba(110, 154, 133, 0.12);
 }
 
+/* =========================
+   Section Heading
+   ========================= */
+
 .section-heading {
   margin-bottom: 16px;
 }
 
 .section-heading h3 {
   margin: 0 0 6px;
-  color: #31564b;
+  color: #294f44;
   font-size: 16px;
+  font-weight: 700;
 }
 
 .section-heading p {
   margin: 0;
-  color: #7a8b84;
-  font-size: 14px;
-  line-height: 1.5;
+  color: #7b8d86;
+  font-size: 13px;
+  line-height: 1.6;
 }
+
+/* =========================
+   Weighting Options
+   ========================= */
 
 .weighting-options {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .weighting-option {
@@ -94,14 +128,15 @@ h2 {
   align-items: flex-start;
   gap: 14px;
   padding: 18px;
-  border: 1px solid #d8e4dc;
+  border: 1px solid #dce8e1;
   border-radius: 12px;
-  background: #fff;
+  background: #ffffff;
   cursor: pointer;
   transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .weighting-option:hover {
@@ -130,67 +165,116 @@ h2 {
 }
 
 .option-content strong {
-  color: #244b40;
+  color: #294f44;
   font-size: 14px;
+  font-weight: 700;
 }
 
 .option-content span {
   color: #71837c;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 8px;
-}
-
-.continue-button {
-  border: none;
-  border-radius: 9px;
-  padding: 12px 20px;
-  background: #2f5d50;
-  color: white;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
-}
-
-.continue-button:hover:not(:disabled) {
-  background: #244b40;
-  transform: translateY(-1px);
-}
-
-.continue-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+/* =========================
+   Validation / Errors
+   ========================= */
 
 .validation-error {
   color: #a54b4b;
   font-size: 12px;
+  line-height: 1.4;
 }
 
 .error-message {
-  margin-bottom: 24px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: #f9eeee;
-  color: #9d4141;
-  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border: 1px solid #ead5d1;
+  border-radius: 10px;
+  background: #fbf5f3;
+  color: #8a5148;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
+/* =========================
+   Loading / State
+   ========================= */
+
 .state-message {
-  padding: 36px;
-  border: 1px solid #e1ebe4;
-  border-radius: 12px;
-  background: #fbfdfb;
+  padding: 48px 24px;
+  border: 1px solid #dfe9e3;
+  border-radius: 16px;
+  background: #ffffff;
   color: #71837c;
+  font-size: 13px;
   text-align: center;
+}
+
+/* =========================
+   Step Actions
+   ========================= */
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #e2ebe6;
+}
+
+.step-actions .primary-button,
+.step-actions .secondary-button {
+  padding: 10px 17px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.step-actions .primary-button {
+  border: 1px solid #2f5d50;
+  background: #2f5d50;
+  color: #ffffff;
+}
+
+.step-actions .primary-button:hover:not(:disabled) {
+  background: #264d42;
+  border-color: #264d42;
+  transform: translateY(-1px);
+}
+
+.step-actions .secondary-button {
+  border: 1px solid #cddbd4;
+  background: #ffffff;
+  color: #3f6256;
+}
+
+.step-actions .secondary-button:hover:not(:disabled) {
+  border-color: #a9c0b6;
+  background: #f7faf8;
+}
+
+.step-actions .primary-button:disabled,
+.step-actions .secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 720px) {
+  .step-content {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -198,7 +282,7 @@ h2 {
     max-width: none;
   }
 
-  h2 {
+  .step-content h2 {
     font-size: 24px;
   }
 
@@ -206,11 +290,11 @@ h2 {
     padding: 15px;
   }
 
-  .form-actions {
-    justify-content: stretch;
+  .step-actions {
+    flex-direction: column;
   }
 
-  .continue-button {
+  .step-actions button {
     width: 100%;
   }
 }

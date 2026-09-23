@@ -1,14 +1,16 @@
 <div class="step-content">
 
-  <div class="step-introduction">
-    <span class="step-label">Step 1</span>
+  <span class="step-label">Step 1</span>
 
-    <h2>Basic Information</h2>
+  <div class="step-header">
+    <div>
+      <h2>Basic Information</h2>
 
-    <p>
-      Start by giving your decision a name and choosing how the
-      importance of your criteria will be determined.
-    </p>
+      <p class="intro">
+        Start by giving your decision a name and choosing how the
+        importance of your criteria will be determined.
+      </p>
+    </div>
   </div>
 
   @if (isLoading) {
@@ -132,16 +134,23 @@
 
       </div>
 
-      <div class="form-actions">
+      <div class="step-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="router.navigate(['/decisions'])"
+          [disabled]="isSaving"
+        >
+          Back to My Decisions
+        </button>
 
         <button
           type="submit"
-          class="continue-button"
+          class="primary-button"
           [disabled]="isSaving"
         >
-          {{ isSaving ? 'Saving...' : 'Save & Continue →' }}
+          {{ isSaving ? 'Saving...' : 'Save & Continue' }}
         </button>
-
       </div>
 
     </form>

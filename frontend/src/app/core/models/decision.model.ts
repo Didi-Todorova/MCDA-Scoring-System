@@ -8,4 +8,5 @@ export interface Decision {
   id: number;
   name: string;
   weightingMethod: WeightingMethod;
+  createdAt: string;
 }

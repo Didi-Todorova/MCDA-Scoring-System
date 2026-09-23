@@ -11,7 +11,10 @@ import {
   Validators
 } from '@angular/forms';
 
-import { ActivatedRoute } from '@angular/router';
+import {
+  ActivatedRoute,
+  Router
+} from '@angular/router';
 
 import {
   Criterion,
@@ -69,6 +72,7 @@ export class CriteriaComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly changeDetector =
     inject(ChangeDetectorRef);
+    private readonly router = inject(Router);
 
   readonly CriterionType = CriterionType;
   readonly NumericType = NumericType;
@@ -87,6 +91,7 @@ export class CriteriaComponent implements OnInit {
   showForm = false;
   configuringCriterionId: number | null = null;
   draggedIntervalIndex: number | null = null;
+  draggedCategoricalOptionIndex: number | null = null;
 
   criterionToDelete: Criterion | null = null;
 
@@ -137,7 +142,7 @@ export class CriteriaComponent implements OnInit {
   editingCriterion: Criterion | null = null;
 
   newIntervalRanges: IntervalRange[] = [];
-  newCategoricalOptions: string[] = [];
+  newCategoricalOptions: CriterionOption[] = [];
 
   ngOnInit(): void {
     const decisionId = this.getDecisionId();
@@ -313,6 +318,13 @@ export class CriteriaComponent implements OnInit {
     this.errorMessage = '';
   }
 
+  goToBasic(): void {
+    this.router.navigate(
+      ['../basic'],
+      { relativeTo: this.route }
+    );
+  }
+
   configureCriterion(
     criterion: Criterion
   ): void {
@@ -355,7 +367,7 @@ export class CriteriaComponent implements OnInit {
     this.newCategoricalOptions =
       this.getCategoricalOptions(
         criterion.id
-      ).map(option => option.value);
+      ).map(option => ({ ...option }));
 
     this.changeDetector.markForCheck();
   }
@@ -533,29 +545,131 @@ moveIntervalDown(index: number): void {
   addCategoricalOption(): void {
     this.newCategoricalOptions = [
       ...this.newCategoricalOptions,
-      ''
+      {
+        id: 0,
+        criterionId: this.editingCriterion?.id ?? 0,
+        value: '',
+        rank: this.newCategoricalOptions.length + 1
+      }
     ];
   }
 
   updateCategoricalOption(
-    index: number,
-    event: Event
-  ): void {
+      index: number,
+      event: Event
+    ): void {
     const value =
       (event.target as HTMLInputElement).value;
 
     this.newCategoricalOptions =
       this.newCategoricalOptions.map(
         (option, i) =>
-          i === index ? value : option
+          i === index
+            ? { ...option, value }
+            : option
       );
   }
 
   removeCategoricalOption(index: number): void {
     this.newCategoricalOptions =
-      this.newCategoricalOptions.filter(
-        (_, i) => i !== index
-      );
+      this.newCategoricalOptions
+        .filter((_, i) => i !== index)
+        .map((option, i) => ({
+          ...option,
+          rank: i + 1
+        }));
+  }
+
+  onCategoricalDragStart(index: number): void {
+    this.draggedCategoricalOptionIndex = index;
+  }
+
+  onCategoricalDragOver(event: DragEvent): void {
+    event.preventDefault();
+  }
+
+  onCategoricalDrop(targetIndex: number): void {
+    if (
+      this.draggedCategoricalOptionIndex === null ||
+      this.draggedCategoricalOptionIndex === targetIndex
+    ) {
+      return;
+    }
+
+    const options = [
+      ...this.newCategoricalOptions
+    ];
+
+    const [movedOption] = options.splice(
+      this.draggedCategoricalOptionIndex,
+      1
+    );
+
+    options.splice(
+      targetIndex,
+      0,
+      movedOption
+    );
+
+    this.newCategoricalOptions = options.map(
+      (option, index) => ({
+        ...option,
+        rank: index + 1
+      })
+    );
+
+    this.draggedCategoricalOptionIndex = null;
+  }
+
+  onCategoricalDragEnd(): void {
+    this.draggedCategoricalOptionIndex = null;
+  }
+
+  moveCategoricalOptionUp(index: number): void {
+    if (index <= 0) {
+      return;
+    }
+
+    const options = [
+      ...this.newCategoricalOptions
+    ];
+
+    [options[index - 1], options[index]] = [
+      options[index],
+      options[index - 1]
+    ];
+
+    this.newCategoricalOptions = options.map(
+      (option, i) => ({
+        ...option,
+        rank: i + 1
+      })
+    );
+  }
+
+  moveCategoricalOptionDown(index: number): void {
+    if (
+      index >=
+      this.newCategoricalOptions.length - 1
+    ) {
+      return;
+    }
+
+    const options = [
+      ...this.newCategoricalOptions
+    ];
+
+    [options[index], options[index + 1]] = [
+      options[index + 1],
+      options[index]
+    ];
+
+    this.newCategoricalOptions = options.map(
+      (option, i) => ({
+        ...option,
+        rank: i + 1
+      })
+    );
   }
 
   addCriterion(): void {
@@ -798,7 +912,7 @@ moveIntervalDown(index: number): void {
       criterionId: criterion.id,
       options:
         this.newCategoricalOptions.map(
-          option => option.trim()
+          option => option.value.trim()
         )
     }).subscribe({
       next: (options) => {
@@ -1179,34 +1293,33 @@ moveIntervalDown(index: number): void {
   private updateCategoricalConfiguration(
     criterion: Criterion
   ): void {
-    const options =
-      this.newCategoricalOptions.map(
-        option => option.trim()
-      );
-
     const existingOptions =
       this.getCategoricalOptions(
         criterion.id
       );
 
-    const requestOptions = existingOptions.map(
-      (option, index) => ({
-        id: option.id,
-        value:
-          options[index] ?? option.value
-      })
-    );
+    if (existingOptions.length === 0) {
+      this.errorMessage =
+        'This criterion has no categorical options configured.';
+      this.isSaving = false;
+      this.changeDetector.markForCheck();
+      return;
+    }
 
-    const hasNewOptions =
-      options.length > existingOptions.length;
+    const requestOptions =
+      this.newCategoricalOptions
+        .filter(option => option.id > 0)
+        .map(option => ({
+          id: option.id,
+          value: option.value.trim()
+        }));
 
     if (
-      existingOptions.length === 0 ||
-      hasNewOptions
+      requestOptions.length !==
+      existingOptions.length
     ) {
       this.errorMessage =
-        'Please use the existing categorical options when configuring an existing criterion.';
-
+        'Please keep all existing categorical options when configuring this criterion.';
       this.isSaving = false;
       this.changeDetector.markForCheck();
       return;
@@ -1219,23 +1332,22 @@ moveIntervalDown(index: number): void {
       }
     ).subscribe({
       next: () => {
-        this.categoricalOptions =
-          this.categoricalOptions.map(
-            option => {
-              const updated =
-                requestOptions.find(
-                  item =>
-                    item.id === option.id
-                );
-
-              return updated
-                ? {
-                    ...option,
-                    value: updated.value
-                  }
-                : option;
-            }
+        const updatedOptions =
+          this.newCategoricalOptions.map(
+            (option, index) => ({
+              ...option,
+              value: option.value.trim(),
+              rank: index + 1
+            })
           );
+
+        this.categoricalOptions =
+          this.categoricalOptions
+            .filter(
+              option =>
+                option.criterionId !== criterion.id
+            )
+            .concat(updatedOptions);
 
         this.finishCriterionConfiguration(
           criterion
@@ -1443,7 +1555,7 @@ moveIntervalDown(index: number): void {
   private validateCategoricalConfiguration(): boolean {
     const options =
       this.newCategoricalOptions.map(
-        option => option.trim()
+        option => option.value.trim()
       );
 
     if (options.length < 2) {
@@ -1667,5 +1779,40 @@ moveIntervalDown(index: number): void {
     );
   }
 
-  
+  saveAndContinue(): void {
+  if (this.isSaving) {
+    return;
+  }
+
+  if (this.criteria.length === 0) {
+    this.errorMessage =
+      'Please add at least one criterion before continuing.';
+
+    this.changeDetector.markForCheck();
+    return;
+  }
+
+  const unconfiguredCriterion = this.criteria.find(criterion => {
+    if (criterion.criterionType === CriterionType.Numerical) {
+      return !this.getNumericalRule(criterion.id);
+    }
+
+    return this.getCategoricalOptionCount(criterion.id) < 2;
+  });
+
+  if (unconfiguredCriterion) {
+    this.errorMessage =
+      `Please configure the criterion "${unconfiguredCriterion.name}" before continuing.`;
+
+    this.changeDetector.markForCheck();
+    return;
+  }
+
+  this.errorMessage = '';
+
+  this.router.navigate(
+    ['../weighting'],
+    { relativeTo: this.route }
+  );
+}
 }

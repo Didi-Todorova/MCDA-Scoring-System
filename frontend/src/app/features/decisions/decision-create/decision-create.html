@@ -1,113 +1,163 @@
-<div class="create-page">
-  <div class="create-container">
+<div class="step-content">
 
-    <a
-      routerLink="/decisions"
-      class="back-link"
-    >
-      ← Back to Decisions
-    </a>
+  <span class="step-label">Step 1</span>
 
-    <div class="create-card">
+  <div class="step-header">
+    <div>
+      <h2>Basic Information</h2>
 
-      <div class="form-header">
-        <span class="eyebrow">New decision</span>
-
-        <h1>Create a Decision</h1>
-
-        <p>
-          Start by defining your decision and choosing
-          how its criteria will be weighted.
-        </p>
-      </div>
-
-      <form
-        [formGroup]="decisionForm"
-        (ngSubmit)="createDecision()"
-      >
-
-        <div class="form-field">
-          <label for="name">
-            Decision name
-          </label>
-
-          <input
-            id="name"
-            type="text"
-            formControlName="name"
-            placeholder="e.g. Laptop Selection"
-            maxlength="200"
-          />
-
-          @if (
-            decisionForm.controls.name.touched &&
-            decisionForm.controls.name.invalid
-          ) {
-            <div class="field-error">
-              Please enter a decision name.
-            </div>
-          }
-        </div>
-
-        <div class="form-field">
-          <label for="weightingMethod">
-            Weighting method
-          </label>
-
-          <select
-            id="weightingMethod"
-            formControlName="weightingMethod"
-          >
-            <option
-              [ngValue]="WeightingMethod.PercentageAllocation"
-            >
-              Percentage Allocation
-            </option>
-
-            <option
-              [ngValue]="WeightingMethod.DirectRanking"
-            >
-              Direct Ranking
-            </option>
-          </select>
-
-          <p class="field-hint">
-            You can configure the actual criterion weights
-            in the Weighting step.
-          </p>
-        </div>
-
-        @if (errorMessage) {
-          <div class="error-message">
-            {{ errorMessage }}
-          </div>
-        }
-
-        <div class="form-actions">
-          <button
-            type="button"
-            class="secondary-button"
-            [disabled]="isSaving"
-            (click)="cancel()"
-          >
-            Cancel
-          </button>
-
-          <button
-            type="submit"
-            class="primary-button"
-            [disabled]="isSaving"
-          >
-            @if (isSaving) {
-              Creating...
-            } @else {
-              Create Decision
-            }
-          </button>
-        </div>
-
-      </form>
-
+      <p class="intro">
+        Start by giving your decision a name and choosing how the
+        importance of your criteria will be determined.
+      </p>
     </div>
   </div>
+
+  @if (errorMessage) {
+    <div class="error-message">
+      {{ errorMessage }}
+    </div>
+  }
+
+  <form
+    [formGroup]="decisionForm"
+    (ngSubmit)="createDecision()"
+  >
+
+    <div class="form-section">
+
+      <div class="form-group">
+
+        <label for="decision-name">
+          Decision name
+        </label>
+
+        <input
+          id="decision-name"
+          type="text"
+          formControlName="name"
+          placeholder="e.g. Laptop Selection"
+          maxlength="200"
+        />
+
+        @if (
+          decisionForm.controls.name.touched &&
+          decisionForm.controls.name.hasError('required')
+        ) {
+          <small class="validation-error">
+            Decision name is required.
+          </small>
+        }
+
+        @if (
+          decisionForm.controls.name.touched &&
+          decisionForm.controls.name.hasError('maxlength')
+        ) {
+          <small class="validation-error">
+            Decision name cannot exceed 200 characters.
+          </small>
+        }
+
+      </div>
+
+    </div>
+
+    <div class="form-section">
+
+      <div class="section-heading">
+
+        <h3>Weighting method</h3>
+
+        <p>
+          Choose how the importance of your criteria will be
+          determined in the next step.
+        </p>
+
+      </div>
+
+      <div class="weighting-options">
+
+        <label
+          class="weighting-option"
+          [class.selected]="
+            decisionForm.controls.weightingMethod.value ===
+            WeightingMethod.PercentageAllocation
+          "
+        >
+
+          <input
+            type="radio"
+            formControlName="weightingMethod"
+            [value]="WeightingMethod.PercentageAllocation"
+          />
+
+          <div class="option-content">
+
+            <strong>
+              Percentage Allocation
+            </strong>
+
+            <span>
+              Distribute 100% of the importance across your criteria.
+            </span>
+
+          </div>
+
+        </label>
+
+        <label
+          class="weighting-option"
+          [class.selected]="
+            decisionForm.controls.weightingMethod.value ===
+            WeightingMethod.DirectRanking
+          "
+        >
+
+          <input
+            type="radio"
+            formControlName="weightingMethod"
+            [value]="WeightingMethod.DirectRanking"
+          />
+
+          <div class="option-content">
+
+            <strong>
+              Direct Ranking
+            </strong>
+
+            <span>
+              Rank your criteria from most important to least important.
+            </span>
+
+          </div>
+
+        </label>
+
+      </div>
+
+    </div>
+
+    <div class="step-actions">
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="isSaving"
+        (click)="cancel()"
+      >
+        Back to My Decisions
+      </button>
+
+      <button
+        type="submit"
+        class="primary-button"
+        [disabled]="isSaving"
+      >
+        {{ isSaving ? 'Creating...' : 'Create & Continue' }}
+      </button>
+
+    </div>
+
+  </form>
+
 </div>

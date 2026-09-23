@@ -19,11 +19,14 @@ import {
   Router
 } from '@angular/router';
 
+import { DatePipe } from '@angular/common';
+
 @Component({
   selector: 'app-decision-list',
   standalone: true,
   imports: [
-    CommonModule
+    CommonModule,
+    DatePipe
   ],
   templateUrl: './decision-list.html',
   styleUrl: './decision-list.css'
@@ -102,15 +105,15 @@ export class DecisionListComponent
     ]);
   }
 
-  openDecision(
-    decision: Decision
-  ): void {
-    this.router.navigate([
-      '/decisions',
-      decision.id,
-      'wizard',
-      'preview'
-    ]);
+  openDecision(decisionId: number): void {
+    this.router.navigate(
+      ['/decisions', decisionId, 'wizard', 'preview'],
+      {
+        queryParams: {
+          fromDecisionList: 'true'
+        }
+      }
+    );
   }
 
   editDecision(

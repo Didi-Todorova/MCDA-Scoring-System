@@ -22,7 +22,7 @@
 }
 
 .page-header p {
-  margin: 0;
+  margin: 30;
   color: #71837c;
   font-size: 15px;
 }
@@ -89,6 +89,14 @@
   color: #234d41;
   font-size: 20px;
   line-height: 1.35;
+}
+
+.decision-created {
+  display: block;
+  margin-top: 15px;
+  color: #87958f;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 /* Actions */

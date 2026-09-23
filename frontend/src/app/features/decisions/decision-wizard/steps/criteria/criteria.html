@@ -1,9 +1,12 @@
 <div class="step-content">
 
+  <span class="step-label">Step 2</span>
+
   <div class="step-header">
     <div>
-      <h1>Criteria</h1>
-      <p>
+      <h2>Criteria</h2>
+
+      <p class="intro">
         Define the criteria that will be used to evaluate the alternatives.
       </p>
     </div>
@@ -421,13 +424,6 @@
                         </p>
                       </div>
 
-                      <button
-                        type="button"
-                        class="secondary-button"
-                        (click)="addCategoricalOption()">
-                        + Add Option
-                      </button>
-
                     </div>
 
                     @if (newCategoricalOptions.length === 0) {
@@ -449,24 +445,68 @@
                         let i = $index
                       ) {
 
-                        <div class="option-row">
+                        <div
+                          class="option-row"
+                          draggable="true"
+                          (dragstart)="onCategoricalDragStart(i)"
+                          (dragover)="onCategoricalDragOver($event)"
+                          (drop)="onCategoricalDrop(i)"
+                          (dragend)="onCategoricalDragEnd()">
+
+                          <button
+                            type="button"
+                            class="drag-handle"
+                            title="Drag to reorder"
+                            aria-label="Drag to reorder option">
+                            ⋮⋮
+                          </button>
 
                           <div class="rank-number">
                             {{ i + 1 }}
                           </div>
 
-                          <input
-                            type="text"
-                            [value]="option"
-                            placeholder="e.g. Excellent"
-                            (input)="updateCategoricalOption(i, $event)" />
+                          <div class="option-field">
 
-                          <button
-                            type="button"
-                            class="delete-button"
-                            (click)="removeCategoricalOption(i)">
-                            Remove
-                          </button>
+                            <label>Option value</label>
+
+                            <input
+                              type="text"
+                              [value]="option.value"
+                              placeholder="e.g. Excellent"
+                              (input)="updateCategoricalOption(i, $event)" />
+
+                          </div>
+
+                          <div class="option-actions">
+
+                            <button
+                              type="button"
+                              class="move-button"
+                              [disabled]="i === 0"
+                              (click)="moveCategoricalOptionUp(i)"
+                              title="Move up"
+                              aria-label="Move option up">
+                              ↑
+                            </button>
+
+                            <button
+                              type="button"
+                              class="move-button"
+                              [disabled]="i === newCategoricalOptions.length - 1"
+                              (click)="moveCategoricalOptionDown(i)"
+                              title="Move down"
+                              aria-label="Move option down">
+                              ↓
+                            </button>
+
+                            <button
+                              type="button"
+                              class="delete-button"
+                              (click)="removeCategoricalOption(i)">
+                              Remove
+                            </button>
+
+                          </div>
 
                         </div>
 
@@ -474,39 +514,54 @@
 
                     </div>
 
+                    <button
+                      type="button"
+                      class="secondary-button"
+                      (click)="addCategoricalOption()">
+                      + Add Option
+                    </button>
+
                   </div>
 
-                }
+                }              
 
-                        @if (errorMessage) {
-                        <div class="error-message configuration-error">
-                          {{ errorMessage }}
-                        </div>
-                      }
+                 <!-- CONFIGURATION ACTIONS -->
 
-                      <div class="configuration-actions">
+                <div class="configuration-actions">
 
-                        <button
-                          type="button"
-                          class="secondary-button"
-                          (click)="closeConfiguration()"
-                          [disabled]="isSaving">
-                          Cancel
-                        </button>
+                  <div class="configuration-action-content">
 
-                        <button
-                          type="submit"
-                          class="primary-button"
-                          [disabled]="isSaving">
-
-                          {{ isSaving ? 'Saving...' : 'Save Changes' }}
-
-                        </button>
-
+                    @if (errorMessage) {
+                      <div class="configuration-error">
+                        {{ errorMessage }}
                       </div>
+                    }
 
+                    <div class="configuration-action-buttons">
+
+                      <button
+                        type="button"
+                        class="secondary-button"
+                        (click)="closeConfiguration()"
+                        [disabled]="isSaving">
+                        Cancel
+                      </button>
+
+                      <button
+                        type="submit"
+                        class="primary-button"
+                        [disabled]="isSaving">
+                        {{ isSaving ? 'Saving...' : 'Save Criterion' }}
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </div>
+                    
               </form>
-
+            
             </div>
 
           }
@@ -872,60 +927,116 @@
             }
 
             <div class="option-list">
-
               @for (
                 option of newCategoricalOptions;
                 track $index;
                 let i = $index
               ) {
+                <div
+                  class="option-row"
+                  draggable="true"
+                  (dragstart)="onCategoricalDragStart(i)"
+                  (dragover)="onCategoricalDragOver($event)"
+                  (drop)="onCategoricalDrop(i)"
+                  (dragend)="onCategoricalDragEnd()">
 
-                <div class="option-row">
+                  <button
+                    type="button"
+                    class="drag-handle"
+                    title="Drag to reorder"
+                    aria-label="Drag to reorder option">
+                    ⋮⋮
+                  </button>
 
                   <div class="rank-number">
                     {{ i + 1 }}
                   </div>
 
-                  <input
-                    type="text"
-                    [value]="option"
-                    placeholder="e.g. Excellent"
-                    (input)="updateCategoricalOption(i, $event)" />
+                  <div class="option-field">
+                    <label>Option value</label>
 
-                  <button
-                    type="button"
-                    class="delete-button"
-                    (click)="removeCategoricalOption(i)">
-                    Remove
-                  </button>
+                    <input
+                      type="text"
+                      [value]="option.value"
+                      placeholder="e.g. Excellent"
+                      (input)="updateCategoricalOption(i, $event)" />
+                  </div>
 
+                  <div class="option-actions">
+                    <button
+                      type="button"
+                      class="move-button"
+                      [disabled]="i === 0"
+                      (click)="moveCategoricalOptionUp(i)"
+                      title="Move up"
+                      aria-label="Move option up">
+                      ↑
+                    </button>
+
+                    <button
+                      type="button"
+                      class="move-button"
+                      [disabled]="i === newCategoricalOptions.length - 1"
+                      (click)="moveCategoricalOptionDown(i)"
+                      title="Move down"
+                      aria-label="Move option down">
+                      ↓
+                    </button>
+
+                    <button
+                      type="button"
+                      class="delete-button"
+                      (click)="removeCategoricalOption(i)">
+                      Remove
+                    </button>
+                  </div>
                 </div>
-
               }
-
             </div>
+
+            <button
+              type="button"
+              class="secondary-button"
+              (click)="addCategoricalOption()">
+              + Add Option
+            </button>
 
           </div>
 
         }
 
+        <!-- ADD CRITERION ACTIONS -->
+
         <div class="configuration-actions">
 
-          <button
-            type="button"
-            class="secondary-button"
-            (click)="cancelForm()"
-            [disabled]="isSaving">
-            Cancel
-          </button>
+          <div class="configuration-action-content">
 
-          <button
-            type="submit"
-            class="primary-button"
-            [disabled]="isSaving">
+            @if (errorMessage) {
+              <div class="configuration-error">
+                {{ errorMessage }}
+              </div>
+            }
 
-            {{ isSaving ? 'Adding...' : 'Add Criterion' }}
+            <div class="configuration-action-buttons">
 
-          </button>
+                      <button
+                type="button"
+                class="secondary-button"
+                (click)="cancelForm()"
+                [disabled]="isSaving">
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                class="primary-button"
+                [disabled]="isSaving">
+                {{ isSaving ? 'Saving...' : 'Save Criterion' }}
+              </button>
+
+            </div>
+
+          </div>
 
         </div>
 
@@ -980,5 +1091,25 @@
     </div>
 
   }
+
+  <div class="step-actions">
+
+  <button
+    type="button"
+    class="secondary-button"
+    (click)="goToBasic()"
+    [disabled]="isSaving">
+    Back
+  </button>
+
+  <button
+    type="button"
+    class="primary-button"
+    (click)="saveAndContinue()"
+    [disabled]="isSaving">
+    {{ isSaving ? 'Saving...' : 'Save & Continue' }}
+  </button>
+
+</div>
 
 </div>

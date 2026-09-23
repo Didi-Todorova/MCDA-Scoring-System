@@ -93,14 +93,18 @@
               {{ decision.name }}
             </h2>
 
+            <span class="decision-created">
+              Created: {{ decision.createdAt | date:'MMMM d, y' }}
+            </span>
+
           </div>
 
           <div class="card-actions">
 
             <button
               type="button"
-              class="open-button"
-              (click)="openDecision(decision)">
+              class="secondary-button"
+              (click)="openDecision(decision.id)">
               Open
             </button>
 

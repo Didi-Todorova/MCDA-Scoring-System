@@ -32,7 +32,7 @@ import {
 export class BasicInformationComponent implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
   private readonly decisionService = inject(DecisionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly changeDetector = inject(ChangeDetectorRef);

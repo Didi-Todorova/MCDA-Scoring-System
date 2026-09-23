@@ -185,23 +185,37 @@
 
     <div class="step-actions">
 
-      <button
+      @if (openedFromDecisionList) {
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="backToDecisions()"
+        >
+          Back to Decisions
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="calculateResult()"
+        >
+          Calculate Result
+        </button>
+      } @else {
+        <button
         type="button"
         class="secondary-button"
         routerLink="../alternatives">
-        Back to Alternatives
+        Back
       </button>
-
+        
       <button
         type="button"
         class="primary-button"
-        routerLink="../results"
-        [disabled]="
-          alternatives.length === 0 ||
-          criteria.length === 0
-        ">
-        Calculate Results
+        routerLink="../results">
+        Continue to Results
       </button>
+      }
 
     </div>
 

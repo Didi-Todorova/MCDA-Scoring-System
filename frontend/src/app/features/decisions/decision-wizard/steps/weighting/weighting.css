@@ -1,33 +1,104 @@
 .step-content {
-  max-width: 760px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
 }
 
 .step-label {
-  color: #6e9a85;
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #6f877e;
   font-size: 12px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-h2 {
-  margin: 8px 0 10px;
+.step-content h2 {
+  margin: 0 0 8px;
   color: #173f35;
-  font-size: 26px;
+  font-size: 28px;
+  font-weight: 700;
 }
 
 .intro {
+  max-width: 680px;
   margin: 0 0 28px;
   color: #71837c;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
-.method-card {
-  padding: 24px;
-  border: 1px solid #dce8e1;
+.step-content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+}
+
+.step-label {
+  display: inline-block;
+  margin-bottom: 10px;
+  color: #6f877e;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.step-header {
+  margin-bottom: 28px;
+}
+
+.step-header h2 {
+  margin: 0 0 8px;
+  color: #173f35;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.intro {
+  max-width: 680px;
+  margin: 0;
+  color: #71837c;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* =========================
+   Loading / Error
+   ========================= */
+
+.loading-message {
+  padding: 48px 24px;
+  border: 1px solid #dfe9e3;
   border-radius: 16px;
   background: #ffffff;
-  box-shadow: 0 8px 24px rgba(34, 72, 58, 0.06);
+  color: #71837c;
+  text-align: center;
+}
+
+.error-message {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px solid #ead5d1;
+  border-radius: 10px;
+  background: #fbf5f3;
+  color: #8a5148;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================
+   Weighting Method Card
+   ========================= */
+
+.method-card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #dce8e1;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 6px 20px rgba(23, 63, 53, 0.06);
 }
 
 .method-header {
@@ -35,50 +106,67 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e7eee9;
+  background: #fbfdfb;
 }
 
 .method-label {
   display: block;
   margin-bottom: 5px;
-  color: #6e9a85;
-  font-size: 12px;
+  color: #789087;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
 }
 
-h3 {
+.step-content h3 {
   margin: 0;
   color: #173f35;
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 700;
 }
 
 .method-description {
-  margin: 14px 0 24px;
+  margin: 0;
+  padding: 18px 24px 20px;
   color: #71837c;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.7;
 }
+
+/* =========================
+   Total Badge
+   ========================= */
 
 .total-badge {
   min-width: 64px;
-  padding: 8px 12px;
+  padding: 6px 10px;
+  border: 1px solid #d4e2da;
   border-radius: 999px;
   background: #f3eee3;
-  color: #7b6950;
-  font-size: 14px;
+  color: #8a7252;
+  font-size: 11px;
   font-weight: 700;
   text-align: center;
 }
 
 .total-badge.valid {
-  background: #e4f0e8;
-  color: #2f5d50;
+  border-color: #d4e2da;
+  background: #edf4ef;
+  color: #527265;
 }
+
+/* =========================
+   Criteria
+   ========================= */
 
 .criteria-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+  padding: 0 24px 24px;
 }
 
 .criterion-row {
@@ -92,21 +180,34 @@ h3 {
   background: #fbfdfb;
 }
 
+.criterion-row:hover {
+  background: #f7faf8;
+}
+
 .criterion-info {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 4px;
 }
 
 .criterion-info strong {
-  color: #24483d;
-  font-size: 15px;
+  color: #294f44;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .criterion-info span {
-  color: #87958f;
-  font-size: 13px;
+  color: #8a9993;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
+
+/* =========================
+   Inputs
+   ========================= */
 
 .weight-input,
 .rank-input {
@@ -127,18 +228,9 @@ h3 {
   font-size: 14px;
   text-align: right;
   outline: none;
-}
-
-.rank-input {
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-}
-
-.rank-input label {
-  color: #71837c;
-  font-size: 12px;
-  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .weight-input input:focus,
@@ -153,72 +245,105 @@ h3 {
   font-weight: 600;
 }
 
-.error-message {
-  margin-top: 18px;
-  padding: 12px 14px;
-  border: 1px solid #e5c9c4;
-  border-radius: 10px;
-  background: #fdf5f3;
-  color: #8a5148;
-  font-size: 14px;
+/* =========================
+   Ranking Input
+   ========================= */
+
+.rank-input {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
 }
 
-.loading-message {
-  padding: 24px;
-  border: 1px dashed #cbdad1;
-  border-radius: 12px;
-  background: #fbfdfb;
+.rank-input label {
   color: #71837c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
+
+/* =========================
+   Actions
+   ========================= */
 
 .step-actions {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #e2ebe6;
 }
 
-.primary-button,
-.secondary-button {
-  padding: 11px 18px;
+.step-actions .primary-button,
+.step-actions .secondary-button {
+  padding: 10px 17px;
   border-radius: 9px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
-.primary-button {
+.step-actions .primary-button {
   border: 1px solid #2f5d50;
   background: #2f5d50;
   color: #ffffff;
 }
 
-.primary-button:hover:not(:disabled) {
-  background: #264c41;
+.step-actions .primary-button:hover:not(:disabled) {
+  background: #264d42;
+  border-color: #264d42;
+  transform: translateY(-1px);
 }
 
-.primary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
-}
-
-.secondary-button {
-  border: 1px solid #cbdad1;
+.step-actions .secondary-button {
+  border: 1px solid #cddbd4;
   background: #ffffff;
   color: #3f6256;
 }
 
-.secondary-button:hover {
-  background: #f7faf7;
+.step-actions .secondary-button:hover:not(:disabled) {
+  border-color: #a9c0b6;
+  background: #f7faf8;
 }
 
-@media (max-width: 600px) {
-  .method-card {
-    padding: 18px;
+.step-actions .primary-button:disabled,
+.step-actions .secondary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* =========================
+   Responsive
+   ========================= */
+
+@media (max-width: 720px) {
+  .step-content {
+    padding-left: 4px;
+    padding-right: 4px;
   }
 
   .method-header {
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 600px) {
+  .method-header {
+    flex-direction: column;
+  }
+
+  .step-header h2 {
+    font-size: 24px;
+  }
+
+  .method-card {
+    border-radius: 16px;
   }
 
   .criterion-row {
@@ -239,5 +364,13 @@ h3 {
   .rank-input input {
     width: 100%;
     box-sizing: border-box;
+  }
+
+  .step-actions {
+    flex-direction: column;
+  }
+
+  .step-actions button {
+    width: 100%;
   }
 }

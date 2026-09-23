@@ -7,6 +7,7 @@ import {
 
 import {
   ActivatedRoute,
+  Router,
   RouterLink
 } from '@angular/router';
 
@@ -52,6 +53,9 @@ import {
 })
 export class PreviewComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+
+private readonly router = inject(Router);
+
   private readonly changeDetector =
     inject(ChangeDetectorRef);
 
@@ -66,6 +70,9 @@ export class PreviewComponent implements OnInit {
 
   private readonly alternativeValueService =
     inject(AlternativeValueService);
+
+    readonly openedFromDecisionList =
+  this.route.snapshot.queryParamMap.get('fromDecisionList') === 'true';
 
   alternatives: Alternative[] = [];
   criteria: Criterion[] = [];
@@ -299,4 +306,19 @@ export class PreviewComponent implements OnInit {
 
     return optionValue || 'Not entered';
   }
+
+  calculateResult(): void {
+    if (!this.decisionId) {
+      this.errorMessage = 'Invalid decision ID.';
+      return;
+    }
+
+    this.router.navigate(
+      ['/decisions', this.decisionId, 'results']
+    );
+  }
+
+  backToDecisions(): void {
+  this.router.navigate(['/decisions']);
+}
 }
