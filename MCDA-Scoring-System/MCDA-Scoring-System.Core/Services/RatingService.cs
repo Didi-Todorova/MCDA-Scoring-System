@@ -186,8 +186,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
         }
 
         private decimal CalculateRatingInterval(
-            decimal rawValue,
-            ICollection<IntervalRange>? intervalRanges)
+    decimal rawValue,
+    ICollection<IntervalRange>? intervalRanges)
         {
             if (intervalRanges == null)
             {
@@ -207,22 +207,36 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
             ValidateIntervalRanges(ranges);
 
-            var selectedRange = ranges.FirstOrDefault(
-                r =>
-                    rawValue >= r.MinValue &&
-                    rawValue <= r.MaxValue);
+            var selectedRangeIndex = -1;
 
-            if (selectedRange == null)
+            for (int i = 0; i < ranges.Count; i++)
+            {
+                var range = ranges[i];
+
+                bool isLastRange = i == ranges.Count - 1;
+
+                bool belongsToRange = isLastRange
+                    ? rawValue >= range.MinValue &&
+                      rawValue <= range.MaxValue
+                    : rawValue >= range.MinValue &&
+                      rawValue < range.MaxValue;
+
+                if (belongsToRange)
+                {
+                    selectedRangeIndex = i;
+                    break;
+                }
+            }
+
+            if (selectedRangeIndex == -1)
             {
                 throw new ArgumentException(
                     $"Value {rawValue} does not belong to any interval range.");
             }
 
-            var intervalPosition = ranges.IndexOf(selectedRange) + 1;
-
             decimal rating =
                 5m -
-                ((intervalPosition - 1) * 4m /
+                (selectedRangeIndex * 4m /
                 (ranges.Count - 1));
 
             return Math.Round(
@@ -415,7 +429,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
         }
 
         private static void ValidateIntervalRanges(
-            List<IntervalRange> ranges)
+     List<IntervalRange> ranges)
         {
             var expectedRank = 1;
 
@@ -438,7 +452,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
             for (int i = 1; i < ranges.Count; i++)
             {
-                if (ranges[i].MinValue <=
+                if (ranges[i].MinValue <
                     ranges[i - 1].MaxValue)
                 {
                     throw new ArgumentException(
