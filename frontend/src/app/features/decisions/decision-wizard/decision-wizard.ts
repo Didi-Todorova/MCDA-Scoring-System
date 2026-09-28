@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -31,12 +32,14 @@ import {
   templateUrl: './decision-wizard.html',
   styleUrl: './decision-wizard.css'
 })
-export class DecisionWizardComponent implements OnInit {
+export class DecisionWizardComponent implements OnInit, OnDestroy{
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly decisionService = inject(DecisionService);
   private readonly changeDetector = inject(ChangeDetectorRef);
+
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   decision: Decision | null = null;
 
@@ -83,12 +86,6 @@ export class DecisionWizardComponent implements OnInit {
     const decisionId =
       this.route.snapshot.paramMap.get('id');
 
-    /*
-     * /decisions/new/wizard
-     *
-     * There is intentionally no decision ID yet.
-     * Basic Information will create the decision.
-     */
     if (!decisionId) {
       this.isNewDecision = true;
       this.isLoading = false;
@@ -98,7 +95,7 @@ export class DecisionWizardComponent implements OnInit {
     const id = Number(decisionId);
 
     if (!Number.isInteger(id) || id <= 0) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
@@ -108,9 +105,16 @@ export class DecisionWizardComponent implements OnInit {
     this.loadDecision(id);
   }
 
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
+
   private loadDecision(id: number): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.decisionService.getDecision(id).subscribe({
       next: (decision) => {
@@ -126,14 +130,33 @@ export class DecisionWizardComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Failed to load the decision.';
+        this.showError('Failed to load the decision.');
 
         this.isLoading = false;
 
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   get currentStep(): number {
@@ -148,10 +171,6 @@ export class DecisionWizardComponent implements OnInit {
   }
 
   goToStep(stepRoute: string): void {
-    /*
-     * In new-decision mode, only Basic Information
-     * exists until the decision has been created.
-     */
     if (this.isNewDecision && stepRoute !== 'basic') {
       return;
     }

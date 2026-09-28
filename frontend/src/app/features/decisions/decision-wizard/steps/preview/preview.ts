@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -51,7 +52,7 @@ import {
   templateUrl: './preview.html',
   styleUrl: './preview.css'
 })
-export class PreviewComponent implements OnInit {
+export class PreviewComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
 
 private readonly router = inject(Router);
@@ -70,6 +71,8 @@ private readonly router = inject(Router);
 
   private readonly alternativeValueService =
     inject(AlternativeValueService);
+
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
     readonly openedFromDecisionList =
   this.route.snapshot.queryParamMap.get('fromDecisionList') === 'true';
@@ -90,13 +93,20 @@ private readonly router = inject(Router);
     this.decisionId = this.getDecisionId();
 
     if (!this.decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
     }
 
     this.loadData(this.decisionId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
   }
 
   private getDecisionId(): number | null {
@@ -121,7 +131,7 @@ private readonly router = inject(Router);
 
   private loadData(decisionId: number): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.alternativeService
       .getAlternatives()
@@ -143,8 +153,7 @@ private readonly router = inject(Router);
             error
           );
 
-          this.errorMessage =
-            'Unable to load alternatives. Please try again.';
+          this.showError('Unable to load alternatives. Please try again.');
 
           this.isLoading = false;
           this.changeDetector.markForCheck();
@@ -173,8 +182,7 @@ private readonly router = inject(Router);
             error
           );
 
-          this.errorMessage =
-            'Unable to load criteria. Please try again.';
+          this.showError('Unable to load criteria. Please try again.');
 
           this.isLoading = false;
           this.changeDetector.markForCheck();
@@ -204,8 +212,7 @@ private readonly router = inject(Router);
             error
           );
 
-          this.errorMessage =
-            'Unable to load categorical options. Please try again.';
+          this.showError('Unable to load categorical options. Please try again.');
 
           this.isLoading = false;
           this.changeDetector.markForCheck();
@@ -237,13 +244,32 @@ private readonly router = inject(Router);
             error
           );
 
-          this.errorMessage =
-            'Unable to load alternative values. Please try again.';
+          this.showError('Unable to load alternative values. Please try again.');
 
           this.isLoading = false;
           this.changeDetector.markForCheck();
         }
       });
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   getAlternativeValue(
@@ -309,7 +335,7 @@ private readonly router = inject(Router);
 
   calculateResult(): void {
     if (!this.decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       return;
     }
 

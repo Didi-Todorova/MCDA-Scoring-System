@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -60,7 +61,7 @@ import {
   templateUrl: './criteria.html',
   styleUrl: './criteria.css'
 })
-export class CriteriaComponent implements OnInit {
+export class CriteriaComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly criterionService = inject(CriterionService);
   private readonly numericalRuleService =
@@ -73,6 +74,8 @@ export class CriteriaComponent implements OnInit {
   private readonly changeDetector =
     inject(ChangeDetectorRef);
     private readonly router = inject(Router);
+
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly CriterionType = CriterionType;
   readonly NumericType = NumericType;
@@ -148,13 +151,20 @@ export class CriteriaComponent implements OnInit {
     const decisionId = this.getDecisionId();
 
     if (!decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
     }
 
     this.loadCriteria(decisionId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
   }
 
   private getDecisionId(): number | null {
@@ -180,7 +190,7 @@ export class CriteriaComponent implements OnInit {
 
   private loadCriteria(decisionId: number): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.criterionService.getCriteria().subscribe({
       next: (criteria) => {
@@ -200,8 +210,8 @@ export class CriteriaComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load criteria. Please try again.';
+        this.showError(
+          'Unable to load criteria. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -228,8 +238,8 @@ export class CriteriaComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load criterion configuration. Please try again.';
+        this.showError(
+          'Unable to load criterion configuration. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -256,8 +266,8 @@ export class CriteriaComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load categorical options. Please try again.';
+        this.showError(
+          'Unable to load categorical options. Please try again.');
 
         this.changeDetector.markForCheck();
       }
@@ -284,13 +294,33 @@ export class CriteriaComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load interval ranges. Please try again.';
+        this.showError(
+          'Unable to load interval ranges. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   openForm(): void {
@@ -302,7 +332,7 @@ export class CriteriaComponent implements OnInit {
     this.newIntervalRanges = [];
     this.newCategoricalOptions = [];
 
-    this.errorMessage = '';
+    this.showError('');
     this.showForm = true;
 
     this.changeDetector.markForCheck();
@@ -315,7 +345,7 @@ export class CriteriaComponent implements OnInit {
 
     this.showForm = false;
     this.editingCriterion = null;
-    this.errorMessage = '';
+    this.showError('');
   }
 
   goToBasic(): void {
@@ -329,7 +359,7 @@ export class CriteriaComponent implements OnInit {
     criterion: Criterion
   ): void {
     this.showForm = false;
-    this.errorMessage = '';
+    this.showError('');
 
     this.editingCriterion = criterion;
     this.configuringCriterionId = criterion.id;
@@ -379,7 +409,7 @@ export class CriteriaComponent implements OnInit {
 
     this.configuringCriterionId = null;
     this.editingCriterion = null;
-    this.errorMessage = '';
+    this.showError('');
   }
 
   onCriterionTypeChanged(): void {
@@ -392,12 +422,12 @@ export class CriteriaComponent implements OnInit {
       this.newIntervalRanges = [];
     }
 
-    this.errorMessage = '';
+    this.showError('');
     this.changeDetector.markForCheck();
   }
 
   onNumericTypeChanged(): void {
-    this.errorMessage = '';
+    this.showError('');
 
     if (
       this.criterionForm.controls.numericType.value !==
@@ -416,7 +446,7 @@ export class CriteriaComponent implements OnInit {
       ];
 
     const minValue = last
-      ? last.maxValue + 1
+      ? last.maxValue 
       : Number(
           this.criterionForm.controls.minValue.value
         );
@@ -680,7 +710,7 @@ moveIntervalDown(index: number): void {
     const decisionId = this.getDecisionId();
 
     if (!decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       return;
     }
 
@@ -688,7 +718,7 @@ moveIntervalDown(index: number): void {
       this.criterionForm.getRawValue();
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.criterionService.createCriterion({
       decisionId,
@@ -713,11 +743,11 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           this.getApiError(
             error,
             'Unable to create the criterion. Please try again.'
-          );
+          ));
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -741,7 +771,7 @@ moveIntervalDown(index: number): void {
       this.criterionForm.getRawValue();
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.criterionService.updateCriterion(
       criterion.id,
@@ -780,11 +810,11 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           this.getApiError(
             error,
             'Unable to update the criterion. Please try again.'
-          );
+          ));
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -869,8 +899,8 @@ moveIntervalDown(index: number): void {
                 error
               );
 
-              this.errorMessage =
-                'The criterion was created, but its interval ranges could not be saved. Please configure it again.';
+              this.showError(
+                'The criterion was created, but its interval ranges could not be saved. Please configure it again.');
 
               this.isSaving = false;
               this.changeDetector.markForCheck();
@@ -896,8 +926,8 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
-          'The criterion was created, but its numerical configuration could not be saved. Please configure it again.';
+        this.showError(
+          'The criterion was created, but its numerical configuration could not be saved. Please configure it again.');
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -932,8 +962,8 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
-          'The criterion was created, but its options could not be saved. Please configure it again.';
+        this.showError(
+          'The criterion was created, but its options could not be saved. Please configure it again.');
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1023,11 +1053,11 @@ moveIntervalDown(index: number): void {
             error
           );
 
-          this.errorMessage =
+          this.showError(
             this.getApiError(
               error,
               'Unable to update the numerical configuration. Please try again.'
-            );
+            ));
 
           this.isSaving = false;
           this.changeDetector.markForCheck();
@@ -1058,11 +1088,11 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           this.getApiError(
             error,
             'Unable to save the numerical configuration. Please try again.'
-          );
+          ));
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1123,8 +1153,8 @@ moveIntervalDown(index: number): void {
             error
           );
 
-          this.errorMessage =
-            'Unable to update the interval ranges. Please try again.';
+          this.showError(
+            'Unable to update the interval ranges. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();
@@ -1168,8 +1198,8 @@ moveIntervalDown(index: number): void {
             if (!failed) {
               failed = true;
 
-              this.errorMessage =
-                'Unable to update the interval ranges. Please try again.';
+              this.showError(
+                'Unable to update the interval ranges. Please try again.');
 
               this.isSaving = false;
               this.changeDetector.markForCheck();
@@ -1233,8 +1263,8 @@ moveIntervalDown(index: number): void {
               error
             );
 
-            this.errorMessage =
-              'Unable to save the interval ranges. Please try again.';
+            this.showError(
+              'Unable to save the interval ranges. Please try again.');
 
             this.isSaving = false;
             this.changeDetector.markForCheck();
@@ -1281,8 +1311,8 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
-          'Unable to update the interval ranges. Please try again.';
+        this.showError(
+          'Unable to update the interval ranges. Please try again.');
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1299,8 +1329,8 @@ moveIntervalDown(index: number): void {
       );
 
     if (existingOptions.length === 0) {
-      this.errorMessage =
-        'This criterion has no categorical options configured.';
+      this.showError(
+        'This criterion has no categorical options configured.');
       this.isSaving = false;
       this.changeDetector.markForCheck();
       return;
@@ -1318,8 +1348,8 @@ moveIntervalDown(index: number): void {
       requestOptions.length !==
       existingOptions.length
     ) {
-      this.errorMessage =
-        'Please keep all existing categorical options when configuring this criterion.';
+      this.showError(
+        'Please keep all existing categorical options when configuring this criterion.');
       this.isSaving = false;
       this.changeDetector.markForCheck();
       return;
@@ -1360,11 +1390,11 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           this.getApiError(
             error,
             'Unable to update categorical options. Please try again.'
-          );
+          ));
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1387,7 +1417,7 @@ moveIntervalDown(index: number): void {
     this.newIntervalRanges = [];
     this.newCategoricalOptions = [];
 
-    this.errorMessage = '';
+    this.showError('');
 
     this.changeDetector.markForCheck();
   }
@@ -1405,7 +1435,7 @@ moveIntervalDown(index: number): void {
     this.isSaving = false;
     this.configuringCriterionId = null;
     this.editingCriterion = null;
-    this.errorMessage = '';
+    this.showError('');
 
     this.changeDetector.markForCheck();
   }
@@ -1414,8 +1444,8 @@ moveIntervalDown(index: number): void {
     if (this.criterionForm.invalid) {
       this.criterionForm.markAllAsTouched();
 
-      this.errorMessage =
-        'Please complete the required fields.';
+      this.showError(
+        'Please complete the required fields.');
 
       return false;
     }
@@ -1426,8 +1456,8 @@ moveIntervalDown(index: number): void {
     const name = formValue.name.trim();
 
     if (!name) {
-      this.errorMessage =
-        'Please enter a criterion name.';
+      this.showError(
+        'Please enter a criterion name.');
       return false;
     }
 
@@ -1452,14 +1482,14 @@ moveIntervalDown(index: number): void {
       !Number.isFinite(minValue) ||
       !Number.isFinite(maxValue)
     ) {
-      this.errorMessage =
-        'Minimum and maximum values must be valid numbers.';
+      this.showError(
+        'Minimum and maximum values must be valid numbers.');
       return false;
     }
 
     if (minValue >= maxValue) {
-      this.errorMessage =
-        'Minimum value must be smaller than maximum value.';
+      this.showError(
+        'Minimum value must be smaller than maximum value.');
       return false;
     }
 
@@ -1468,8 +1498,8 @@ moveIntervalDown(index: number): void {
       NumericType.TargetValue
     ) {
       if (formValue.targetValue === null) {
-        this.errorMessage =
-          'Please enter a target value.';
+        this.showError(
+          'Please enter a target value.');
         return false;
       }
 
@@ -1481,8 +1511,8 @@ moveIntervalDown(index: number): void {
         targetValue < minValue ||
         targetValue > maxValue
       ) {
-        this.errorMessage =
-          'Target value must be between the minimum and maximum values.';
+        this.showError(
+          'Target value must be between the minimum and maximum values.');
         return false;
       }
     }
@@ -1492,8 +1522,8 @@ moveIntervalDown(index: number): void {
       NumericType.Scope
     ) {
       if (formValue.direction === null) {
-        this.errorMessage =
-          'Please select a direction.';
+        this.showError(
+          'Please select a direction.');
         return false;
       }
     }
@@ -1503,8 +1533,8 @@ moveIntervalDown(index: number): void {
       NumericType.Interval
     ) {
       if (this.newIntervalRanges.length < 2) {
-        this.errorMessage =
-          'Please configure at least two interval ranges.';
+        this.showError(
+          'Please configure at least two interval ranges.');
         return false;
       }
 
@@ -1512,8 +1542,8 @@ moveIntervalDown(index: number): void {
         if (
           range.minValue >= range.maxValue
         ) {
-          this.errorMessage =
-            'Each interval must have a minimum value smaller than its maximum value.';
+          this.showError(
+            'Each interval must have a minimum value smaller than its maximum value.');
           return false;
         }
 
@@ -1521,8 +1551,8 @@ moveIntervalDown(index: number): void {
           range.minValue < minValue ||
           range.maxValue > maxValue
         ) {
-          this.errorMessage =
-            'Interval ranges must be inside the minimum and maximum values.';
+          this.showError(
+            'Interval ranges must be inside the minimum and maximum values.');
           return false;
         }
       }
@@ -1538,12 +1568,18 @@ moveIntervalDown(index: number): void {
         i < sortedRanges.length;
         i++
       ) {
-        if (
-          sortedRanges[i].minValue <=
-          sortedRanges[i - 1].maxValue
-        ) {
-          this.errorMessage =
-            'Interval ranges must not overlap.';
+        const previous = sortedRanges[i - 1];
+        const current = sortedRanges[i];
+
+        if (current.minValue < previous.maxValue) {
+          this.showError(
+            'Interval ranges must not overlap.');
+          return false;
+        }
+
+        if (current.minValue > previous.maxValue) {
+          this.showError(
+            'Interval ranges must cover the complete numerical rule range without gaps.');
           return false;
         }
       }
@@ -1559,14 +1595,14 @@ moveIntervalDown(index: number): void {
       );
 
     if (options.length < 2) {
-      this.errorMessage =
-        'Please add at least two categorical options.';
+      this.showError(
+        'Please add at least two categorical options.');
       return false;
     }
 
     if (options.some(option => !option)) {
-      this.errorMessage =
-        'All categorical options must have a value.';
+      this.showError(
+        'All categorical options must have a value.');
       return false;
     }
 
@@ -1579,8 +1615,8 @@ moveIntervalDown(index: number): void {
       new Set(normalized).size !==
       normalized.length
     ) {
-      this.errorMessage =
-        'Categorical options must be unique.';
+      this.showError(
+        'Categorical options must be unique.');
       return false;
     }
 
@@ -1684,7 +1720,7 @@ moveIntervalDown(index: number): void {
     criterion: Criterion
   ): void {
     this.criterionToDelete = criterion;
-    this.errorMessage = '';
+    this.showError('');
     this.changeDetector.markForCheck();
   }
 
@@ -1702,7 +1738,7 @@ moveIntervalDown(index: number): void {
       this.criterionToDelete;
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.criterionService.deleteCriterion(
       criterion.id
@@ -1756,11 +1792,11 @@ moveIntervalDown(index: number): void {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           this.getApiError(
             error,
             'Unable to delete the criterion. Please try again.'
-          );
+          ));
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -1785,8 +1821,8 @@ moveIntervalDown(index: number): void {
   }
 
   if (this.criteria.length === 0) {
-    this.errorMessage =
-      'Please add at least one criterion before continuing.';
+    this.showError(
+      'Please add at least one criterion before continuing.');
 
     this.changeDetector.markForCheck();
     return;
@@ -1801,14 +1837,14 @@ moveIntervalDown(index: number): void {
   });
 
   if (unconfiguredCriterion) {
-    this.errorMessage =
-      `Please configure the criterion "${unconfiguredCriterion.name}" before continuing.`;
+    this.showError(
+      `Please configure the criterion "${unconfiguredCriterion.name}" before continuing.`);
 
     this.changeDetector.markForCheck();
     return;
   }
 
-  this.errorMessage = '';
+  this.showError('');
 
   this.router.navigate(
     ['../weighting'],

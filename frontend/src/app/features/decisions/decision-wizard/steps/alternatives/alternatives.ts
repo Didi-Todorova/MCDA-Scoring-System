@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -70,7 +71,7 @@ import {
   templateUrl: './alternatives.html',
   styleUrl: './alternatives.css'
 })
-export class AlternativesComponent implements OnInit {
+export class AlternativesComponent implements OnInit, OnDestroy  {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -85,6 +86,8 @@ export class AlternativesComponent implements OnInit {
   private readonly alternativeValueService =
     inject(AlternativeValueService);
 
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
+  
   alternatives: Alternative[] = [];
   criteria: Criterion[] = [];
   numericalRules: CriterionNumericalRule[] = [];
@@ -98,17 +101,8 @@ export class AlternativesComponent implements OnInit {
   showForm = false;
 
   decisionId: number | null = null;
-
-  /**
-   * null = creating a new alternative
-   * number = editing an existing alternative
-   */
   editingAlternativeId: number | null = null;
 
-  /**
-   * Local values being edited inside the form.
-   * Nothing here is persisted until Save Alternative is clicked.
-   */
   draftValues: Record<
     number,
     {
@@ -138,7 +132,7 @@ export class AlternativesComponent implements OnInit {
     this.decisionId = this.getDecisionId();
 
     if (!this.decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError( 'Invalid decision ID.');
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
@@ -147,6 +141,12 @@ export class AlternativesComponent implements OnInit {
     this.loadAlternatives(this.decisionId);
   }
 
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+  }
 
   private getDecisionId(): number | null {
 
@@ -175,7 +175,7 @@ export class AlternativesComponent implements OnInit {
   private loadAlternatives(decisionId: number): void {
 
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError( '');
 
     this.alternativeService.getAlternatives().subscribe({
 
@@ -198,8 +198,8 @@ export class AlternativesComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load alternatives. Please try again.';
+        this.showError(
+          'Unable to load alternatives. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -233,8 +233,8 @@ export class AlternativesComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load criteria. Please try again.';
+        this.showError(
+          'Unable to load criteria. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -266,8 +266,8 @@ export class AlternativesComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load numerical configuration. Please try again.';
+        this.showError(
+          'Unable to load numerical configuration. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -299,8 +299,8 @@ export class AlternativesComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load categorical options. Please try again.';
+        this.showError(
+          'Unable to load categorical options. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -335,8 +335,8 @@ export class AlternativesComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
-            'Unable to load alternative values. Please try again.';
+          this.showError(
+            'Unable to load alternative values. Please try again.');
 
           this.isLoading = false;
           this.changeDetector.markForCheck();
@@ -344,11 +344,26 @@ export class AlternativesComponent implements OnInit {
       });
   }
 
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
 
-  // ---------------------------------------------------------
-  // FORM
-  // ---------------------------------------------------------
+    this.errorMessage = message;
 
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
+  }
+ 
   openForm(): void {
 
     this.editingAlternativeId = null;
@@ -358,7 +373,7 @@ export class AlternativesComponent implements OnInit {
     });
 
     this.draftValues = {};
-    this.errorMessage = '';
+    this.showError( '');
     this.showForm = true;
 
     this.changeDetector.markForCheck();
@@ -392,7 +407,7 @@ export class AlternativesComponent implements OnInit {
       };
     }
 
-    this.errorMessage = '';
+    this.showError( '');
     this.showForm = true;
 
     this.changeDetector.markForCheck();
@@ -404,15 +419,10 @@ export class AlternativesComponent implements OnInit {
     this.showForm = false;
     this.editingAlternativeId = null;
     this.draftValues = {};
-    this.errorMessage = '';
+    this.showError( '');
 
     this.changeDetector.markForCheck();
   }
-
-
-  // ---------------------------------------------------------
-  // LOCAL FORM VALUE CHANGES
-  // ---------------------------------------------------------
 
   updateNumericValue(
     criterionId: number,
@@ -485,16 +495,16 @@ export class AlternativesComponent implements OnInit {
     if (this.alternativeForm.invalid) {
 
       this.alternativeForm.markAllAsTouched();
-      this.errorMessage =
-        'Please enter an alternative name.';
+      this.showError(
+        'Please enter an alternative name.');
 
       return;
     }
 
     if (!this.decisionId) {
 
-      this.errorMessage =
-        'Invalid decision ID.';
+      this.showError(
+        'Invalid decision ID.');
 
       return;
     }
@@ -508,8 +518,8 @@ export class AlternativesComponent implements OnInit {
         required: true
       });
 
-      this.errorMessage =
-        'Please enter an alternative name.';
+      this.showError(
+        'Please enter an alternative name.');
 
       return;
     }
@@ -519,12 +529,12 @@ export class AlternativesComponent implements OnInit {
 
     if (validationError) {
 
-      this.errorMessage = validationError;
+      this.showError( validationError);
       return;
     }
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError( '');
 
     if (this.editingAlternativeId === null) {
 
@@ -570,9 +580,9 @@ export class AlternativesComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
+          this.showError(
             error?.error?.Error ??
-            'Unable to create the alternative. Please try again.';
+            'Unable to create the alternative. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();
@@ -593,8 +603,8 @@ export class AlternativesComponent implements OnInit {
 
     if (!alternative) {
 
-      this.errorMessage =
-        'Unable to find the alternative. Please try again.';
+      this.showError(
+        'Unable to find the alternative. Please try again.');
 
       this.isSaving = false;
       return;
@@ -651,9 +661,9 @@ export class AlternativesComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
+          this.showError(
             error?.error?.Error ??
-            'Unable to update the alternative. Please try again.';
+            'Unable to update the alternative. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();
@@ -781,9 +791,9 @@ export class AlternativesComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
+        this.showError(
           error?.error?.Error ??
-          'Unable to save the alternative values. Please try again.';
+          'Unable to save the alternative values. Please try again.');
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -798,15 +808,10 @@ export class AlternativesComponent implements OnInit {
     this.editingAlternativeId = null;
     this.draftValues = {};
     this.isSaving = false;
-    this.errorMessage = '';
+    this.showError( '');
 
     this.changeDetector.markForCheck();
   }
-
-
-  // ---------------------------------------------------------
-  // VALIDATION
-  // ---------------------------------------------------------
 
   private validateAlternativeValues(): string | null {
 
@@ -903,7 +908,7 @@ export class AlternativesComponent implements OnInit {
   ): void {
 
     this.alternativeToDelete = alternative;
-    this.errorMessage = '';
+    this.showError( '');
 
     this.changeDetector.markForCheck();
   }
@@ -927,7 +932,7 @@ export class AlternativesComponent implements OnInit {
       this.alternativeToDelete;
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError( '');
 
     this.alternativeService
       .deleteAlternative(alternative.id)
@@ -960,9 +965,9 @@ export class AlternativesComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
+          this.showError(
             error?.error?.Error ??
-            'Unable to delete the alternative. Please try again.';
+            'Unable to delete the alternative. Please try again.');
 
           this.isSaving = false;
 
@@ -971,35 +976,30 @@ export class AlternativesComponent implements OnInit {
       });
   }
 
-
-  // ---------------------------------------------------------
-  // SAVE & CONTINUE
-  // ---------------------------------------------------------
-
   saveAndContinue(): void {
 
-    this.errorMessage = '';
+    this.showError( '');
 
     if (this.showForm) {
 
-      this.errorMessage =
-        'Please save or cancel the alternative you are currently editing before continuing.';
+      this.showError(
+        'Please save or cancel the alternative you are currently editing before continuing.');
 
       return;
     }
 
     if (this.alternatives.length === 0) {
 
-      this.errorMessage =
-        'Please add at least one alternative before continuing.';
+      this.showError(
+        'Please add at least one alternative before continuing.');
 
       return;
     }
 
     if (this.criteria.length === 0) {
 
-      this.errorMessage =
-        'No criteria are configured for this decision.';
+      this.showError(
+        'No criteria are configured for this decision.');
 
       return;
     }
@@ -1009,7 +1009,7 @@ export class AlternativesComponent implements OnInit {
 
     if (validationError) {
 
-      this.errorMessage = validationError;
+      this.showError( validationError);
 
       this.changeDetector.markForCheck();
 

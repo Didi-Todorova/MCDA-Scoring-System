@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -48,6 +49,8 @@ export class WeightingComponent implements OnInit {
   private readonly weightingService = inject(WeightingService);
   private readonly changeDetector = inject(ChangeDetectorRef);
 
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
+
   readonly WeightingMethod = WeightingMethod;
   readonly CriterionType = CriterionType;
 
@@ -72,13 +75,20 @@ export class WeightingComponent implements OnInit {
     const decisionId = this.getDecisionId();
 
     if (!decisionId) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       this.isLoading = false;
       this.changeDetector.markForCheck();
       return;
     }
 
     this.loadDecision(decisionId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
   }
 
   private getDecisionId(): number | null {
@@ -114,8 +124,7 @@ export class WeightingComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load the decision. Please try again.';
+        this.showError('Unable to load the decision. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -145,8 +154,7 @@ export class WeightingComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          'Unable to load criteria. Please try again.';
+        this.showError('Unable to load criteria. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
@@ -179,6 +187,26 @@ export class WeightingComponent implements OnInit {
       (total, item) => total + Number(item.weight || 0),
       0
     );
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   updatePercentageWeight(
@@ -244,14 +272,12 @@ export class WeightingComponent implements OnInit {
       return;
     }
 
-    this.errorMessage =
-      'This weighting method is not supported yet.';
+    this.showError('This weighting method is not supported yet.');
   }
 
   private savePercentageAllocation(): void {
     if (this.totalPercentage !== 100) {
-      this.errorMessage =
-        `Weights must total 100%. Current total: ${this.totalPercentage}%.`;
+      this.showError('Weights must total 100%. Current total: ${this.totalPercentage}%.');
       return;
     }
 
@@ -262,13 +288,12 @@ export class WeightingComponent implements OnInit {
           item.weight > 100
       )
     ) {
-      this.errorMessage =
-        'Each weight must be between 0% and 100%.';
+      this.showError('Each weight must be between 0% and 100%.');
       return;
     }
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.weightingService
       .setPercentageAllocation(
@@ -287,9 +312,8 @@ export class WeightingComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
-            error?.error?.Error ??
-            'Unable to save the criterion weights. Please try again.';
+          this.showError(error?.error?.Error ??
+            'Unable to save the criterion weights. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();
@@ -311,21 +335,19 @@ export class WeightingComponent implements OnInit {
           item.rank > numberOfCriteria
       )
     ) {
-      this.errorMessage =
-        `Ranks must be between 1 and ${numberOfCriteria}.`;
+      this.showError('Ranks must be between 1 and ${numberOfCriteria}.');
       return;
     }
 
     if (
       new Set(ranks).size !== ranks.length
     ) {
-      this.errorMessage =
-        'Each criterion must have a unique rank.';
+      this.showError('Each criterion must have a unique rank.');
       return;
     }
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.weightingService
       .setDirectRanking(
@@ -344,9 +366,8 @@ export class WeightingComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
-            error?.error?.Error ??
-            'Unable to save the criterion ranking. Please try again.';
+          this.showError(error?.error?.Error ??
+            'Unable to save the criterion ranking. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();

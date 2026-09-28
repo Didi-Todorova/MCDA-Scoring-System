@@ -1,6 +1,7 @@
 import {
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit,
   inject
 } from '@angular/core';
@@ -32,7 +33,7 @@ import { DatePipe } from '@angular/common';
   styleUrl: './decision-list.css'
 })
 export class DecisionListComponent
-  implements OnInit {
+  implements OnInit, OnDestroy {
 
   private readonly decisionService =
     inject(DecisionService);
@@ -42,6 +43,12 @@ export class DecisionListComponent
 
   private readonly router =
     inject(Router);
+
+  private errorTimeout:
+    ReturnType<typeof setTimeout> | null = null;
+
+  private deleteErrorTimeout:
+    ReturnType<typeof setTimeout> | null = null;
 
   decisions: Decision[] = [];
 
@@ -59,9 +66,64 @@ export class DecisionListComponent
     this.loadDecisions();
   }
 
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    if (this.deleteErrorTimeout) {
+      clearTimeout(this.deleteErrorTimeout);
+      this.deleteErrorTimeout = null;
+    }
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+
+      this.changeDetector.markForCheck();
+    }, 4000);
+  }
+
+  private showDeleteError(message: string): void {
+    if (this.deleteErrorTimeout) {
+      clearTimeout(this.deleteErrorTimeout);
+      this.deleteErrorTimeout = null;
+    }
+
+    this.deleteErrorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.deleteErrorTimeout = setTimeout(() => {
+      this.deleteErrorMessage = '';
+      this.deleteErrorTimeout = null;
+
+      this.changeDetector.markForCheck();
+    }, 4000);
+  }
+
   loadDecisions(): void {
     this.isLoading = true;
-    this.errorMessage = '';
+
+    this.showError('');
 
     this.decisionService
       .getDecisions()
@@ -88,8 +150,9 @@ export class DecisionListComponent
             error
           );
 
-          this.errorMessage =
-            'Unable to load decisions. Please try again.';
+          this.showError(
+            'Unable to load decisions. Please try again.'
+          );
 
           this.isLoading = false;
 
@@ -110,7 +173,12 @@ export class DecisionListComponent
 
   openDecision(decisionId: number): void {
     this.router.navigate(
-      ['/decisions', decisionId, 'wizard', 'preview'],
+      [
+        '/decisions',
+        decisionId,
+        'wizard',
+        'preview'
+      ],
       {
         queryParams: {
           fromDecisionList: 'true'
@@ -135,7 +203,7 @@ export class DecisionListComponent
   ): void {
     this.decisionToDelete = decision;
 
-    this.deleteErrorMessage = '';
+    this.showDeleteError('');
   }
 
   cancelDelete(): void {
@@ -145,7 +213,7 @@ export class DecisionListComponent
 
     this.decisionToDelete = null;
 
-    this.deleteErrorMessage = '';
+    this.showDeleteError('');
   }
 
   deleteDecision(): void {
@@ -158,7 +226,7 @@ export class DecisionListComponent
 
     this.isDeleting = true;
 
-    this.deleteErrorMessage = '';
+    this.showDeleteError('');
 
     this.decisionService
       .deleteDecision(decisionId)
@@ -186,9 +254,10 @@ export class DecisionListComponent
             error
           );
 
-          this.deleteErrorMessage =
+          this.showDeleteError(
             error?.error?.Error ??
-            'Unable to delete the decision. Please try again.';
+            'Unable to delete the decision. Please try again.'
+          );
 
           this.isDeleting = false;
 

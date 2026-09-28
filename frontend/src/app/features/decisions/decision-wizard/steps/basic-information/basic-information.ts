@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -34,13 +35,15 @@ import {
   templateUrl: './basic-information.html',
   styleUrl: './basic-information.css'
 })
-export class BasicInformationComponent implements OnInit {
+export class BasicInformationComponent implements OnInit, OnDestroy {
 
   private readonly route = inject(ActivatedRoute);
   readonly router = inject(Router);
   private readonly decisionService = inject(DecisionService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly changeDetector = inject(ChangeDetectorRef);
+
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   readonly WeightingMethod = WeightingMethod;
 
@@ -77,7 +80,7 @@ export class BasicInformationComponent implements OnInit {
     const id = Number(decisionId);
 
     if (!Number.isInteger(id) || id <= 0) {
-      this.errorMessage = 'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
       this.isLoading = false;
       return;
     }
@@ -87,9 +90,16 @@ export class BasicInformationComponent implements OnInit {
     this.loadDecision(id);
   }
 
+  ngOnDestroy(): void {
+  if (this.errorTimeout) {
+    clearTimeout(this.errorTimeout);
+    this.errorTimeout = null;
+  }
+}
+
   private loadDecision(id: number): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.decisionService.getDecision(id).subscribe({
       next: (decision) => {
@@ -108,13 +118,32 @@ export class BasicInformationComponent implements OnInit {
       error: (error) => {
         console.error('Failed to load decision', error);
 
-        this.errorMessage =
-          'Unable to load the decision. Please try again.';
+        this.showError('Unable to load the decision. Please try again.');
 
         this.isLoading = false;
         this.changeDetector.markForCheck();
       }
     });
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   saveAndContinue(): void {
@@ -137,14 +166,13 @@ export class BasicInformationComponent implements OnInit {
 
       this.basicForm.controls.name.markAsTouched();
 
-      this.errorMessage =
-        'Please enter a decision name.';
+      this.showError('Please enter a decision name.');
 
       return;
     }
 
     this.isSaving = true;
-    this.errorMessage = '';
+    this.showError('');
 
     if (this.isNewDecision) {
       this.createDecision({
@@ -156,8 +184,7 @@ export class BasicInformationComponent implements OnInit {
     }
 
     if (!this.decision) {
-      this.errorMessage =
-        'Unable to identify the decision. Please try again.';
+      this.showError('Unable to identify the decision. Please try again.');
 
       this.isSaving = false;
       return;
@@ -191,9 +218,8 @@ export class BasicInformationComponent implements OnInit {
           error
         );
 
-        this.errorMessage =
-          error?.error?.Error ??
-          'Unable to create the decision. Please try again.';
+        this.showError(error?.error?.Error ??
+          'Unable to create the decision. Please try again.');
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
@@ -231,9 +257,8 @@ export class BasicInformationComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
-            error?.error?.Error ??
-            'Unable to save the decision. Please try again.';
+          this.showError(error?.error?.Error ??
+            'Unable to save the decision. Please try again.');
 
           this.isSaving = false;
           this.changeDetector.markForCheck();

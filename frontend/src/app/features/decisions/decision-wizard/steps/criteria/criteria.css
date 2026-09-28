@@ -140,6 +140,7 @@
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  margin: 20 20 20 20;
 }
 
 .secondary-button:hover {

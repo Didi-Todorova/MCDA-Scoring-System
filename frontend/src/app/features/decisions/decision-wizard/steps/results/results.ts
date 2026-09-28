@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -30,7 +31,7 @@ import {
   templateUrl: './results.html',
   styleUrl: './results.css'
 })
-export class ResultsComponent implements OnInit {
+export class ResultsComponent implements OnInit, OnDestroy {
   private readonly route =
     inject(ActivatedRoute);
 
@@ -39,6 +40,8 @@ export class ResultsComponent implements OnInit {
 
   private readonly changeDetector =
     inject(ChangeDetectorRef);
+
+  private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   results: DecisionScore[] = [];
 
@@ -51,8 +54,7 @@ export class ResultsComponent implements OnInit {
     this.decisionId = this.getDecisionId();
 
     if (!this.decisionId) {
-      this.errorMessage =
-        'Invalid decision ID.';
+      this.showError('Invalid decision ID.');
 
       this.isLoading = false;
 
@@ -62,6 +64,13 @@ export class ResultsComponent implements OnInit {
     }
 
     this.loadResults(this.decisionId);
+  }
+
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
   }
 
   private getDecisionId(): number | null {
@@ -90,7 +99,7 @@ export class ResultsComponent implements OnInit {
     decisionId: number
   ): void {
     this.isLoading = true;
-    this.errorMessage = '';
+    this.showError('');
 
     this.decisionService
       .getDecisionScore(decisionId)
@@ -109,15 +118,34 @@ export class ResultsComponent implements OnInit {
             error
           );
 
-          this.errorMessage =
-            error?.error?.Error ??
-            'Unable to calculate the results. Please try again.';
+          this.showError(error?.error?.Error ??
+            'Unable to calculate the results. Please try again.');
 
           this.isLoading = false;
 
           this.changeDetector.markForCheck();
         }
       });
+  }
+
+  private showError(message: string): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
+
+    this.errorMessage = message;
+
+    if (!message) {
+      this.changeDetector.markForCheck();
+      return;
+    }
+
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+      this.changeDetector.detectChanges();
+    }, 4000);
   }
 
   getScorePercentage(
