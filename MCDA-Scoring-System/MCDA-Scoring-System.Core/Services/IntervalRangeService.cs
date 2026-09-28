@@ -141,63 +141,85 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                     criterionNumericalRuleId);
 
             if (rule == null)
+            {
                 throw new KeyNotFoundException(
                     $"Criterion Numerical Rule with ID " +
                     $"{criterionNumericalRuleId} not found.");
+            }
 
             ValidateNumericType(rule);
 
-            var ranges = await _repo.All<IntervalRange>()
+            if (dto.Ranges == null || dto.Ranges.Count < 2)
+            {
+                throw new ArgumentException(
+                    "At least two interval ranges are required.");
+            }
+
+            ValidateRanges(
+                dto.Ranges,
+                rule.MinValue,
+                rule.MaxValue);
+
+            var expectedRanks = Enumerable
+                .Range(1, dto.Ranges.Count)
+                .ToHashSet();
+
+            var actualRanks = dto.Ranges
+                .Select(r => r.Rank)
+                .ToHashSet();
+
+            if (!actualRanks.SetEquals(expectedRanks))
+            {
+                throw new ArgumentException(
+                    "Interval ranks must contain each rank exactly once.");
+            }
+
+            var existingRanges = await _repo
+                .All<IntervalRange>()
                 .Where(r =>
                     r.CriterionNumericalRuleId ==
                     criterionNumericalRuleId)
                 .ToListAsync();
 
-            if (ranges.Count == 0)
-                throw new KeyNotFoundException(
-                    $"No interval ranges found for " +
-                    $"criterion numerical rule {criterionNumericalRuleId}.");
+            var existingById = existingRanges
+                .ToDictionary(r => r.Id);
 
-            if (dto.Ranges == null ||
-                dto.Ranges.Count != ranges.Count)
+            foreach (var input in dto.Ranges)
             {
-                throw new ArgumentException(
-                    "All interval ranges must be provided.");
-            }
+                if (input.Id > 0)
+                {
+                    if (!existingById.TryGetValue(
+                            input.Id,
+                            out var existingRange))
+                    {
+                        throw new ArgumentException(
+                            $"Interval range with ID {input.Id} " +
+                            $"does not belong to numerical rule " +
+                            $"{criterionNumericalRuleId}.");
+                    }
 
-            var existingIds = ranges
-                .Select(r => r.Id)
-                .ToHashSet();
+                    existingRange.MinValue = input.MinValue;
+                    existingRange.MaxValue = input.MaxValue;
+                    existingRange.Rank = input.Rank;
+                }
+                else
+                {
+                    var newRange = new IntervalRange
+                    {
+                        CriterionNumericalRuleId =
+                            criterionNumericalRuleId,
 
-            var submittedIds = dto.Ranges
-                .Select(r => r.Id)
-                .ToHashSet();
+                        MinValue = input.MinValue,
+                        MaxValue = input.MaxValue,
+                        Rank = input.Rank
+                    };
 
-            if (!existingIds.SetEquals(submittedIds))
-                throw new ArgumentException(
-                    "The submitted interval ranges do not match " +
-                    "the existing ranges.");
-
-            ValidateRanges(
-            dto.Ranges,
-            rule.MinValue,
-            rule.MaxValue);
-
-            var rangesById = ranges.ToDictionary(r => r.Id);
-
-            for (int i = 0; i < dto.Ranges.Count; i++)
-            {
-                var input = dto.Ranges[i];
-                var range = rangesById[input.Id];
-
-                range.MinValue = input.MinValue;
-                range.MaxValue = input.MaxValue;
-                range.Rank = i + 1;
+                    await _repo.AddAsync(newRange);
+                }
             }
 
             await _repo.SaveChangesAsync();
         }
-
         public async Task<bool> DeleteIntervalRangeAsync(int id)
         {
             var range = await _repo.GetByIdAsync<IntervalRange>(id);
@@ -240,11 +262,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
     decimal ruleMinValue,
     decimal ruleMaxValue)
         {
-            var rangeList = ranges.ToList();
-
-            ValidateRanges(
-                rangeList.Select(r =>
-                    (r.MinValue, r.MaxValue)),
+            ValidateRangeBoundaries(
+                ranges.Select(r => (r.MinValue, r.MaxValue)),
                 ruleMinValue,
                 ruleMaxValue);
         }
@@ -254,19 +273,16 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             decimal ruleMinValue,
             decimal ruleMaxValue)
         {
-            var rangeList = ranges.ToList();
-
-            ValidateRanges(
-                rangeList.Select(r =>
-                    (r.MinValue, r.MaxValue)),
+            ValidateRangeBoundaries(
+                ranges.Select(r => (r.MinValue, r.MaxValue)),
                 ruleMinValue,
                 ruleMaxValue);
         }
 
-        private static void ValidateRanges(
-            IEnumerable<(decimal MinValue, decimal MaxValue)> ranges,
-            decimal ruleMinValue,
-            decimal ruleMaxValue)
+        private static void ValidateRangeBoundaries(
+    IEnumerable<(decimal MinValue, decimal MaxValue)> ranges,
+    decimal ruleMinValue,
+    decimal ruleMaxValue)
         {
             var orderedRanges = ranges
                 .OrderBy(r => r.MinValue)
@@ -328,6 +344,6 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new ArgumentException(
                     $"Interval ranges must end at the numerical rule maximum of {ruleMaxValue}.");
             }
-        }      
+        }
     }
 }

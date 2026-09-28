@@ -533,7 +533,12 @@ onIntervalDrop(targetIndex: number): void {
 
   ranges.splice(targetIndex, 0, movedRange);
 
-  this.newIntervalRanges = ranges;
+  this.newIntervalRanges = ranges.map(
+    (range, index) => ({
+      ...range,
+      rank: index + 1
+    })
+  );
 
   this.draggedIntervalIndex = null;
 }
@@ -554,7 +559,12 @@ moveIntervalUp(index: number): void {
     ranges[index - 1]
   ];
 
-  this.newIntervalRanges = ranges;
+  this.newIntervalRanges = ranges.map(
+    (range, i) => ({
+      ...range,
+      rank: i + 1
+    })
+  );
 }
 
 moveIntervalDown(index: number): void {
@@ -569,7 +579,12 @@ moveIntervalDown(index: number): void {
     ranges[index]
   ];
 
-  this.newIntervalRanges = ranges;
+  this.newIntervalRanges = ranges.map(
+    (range, i) => ({
+      ...range,
+      rank: i + 1
+    })
+  );
 }
 
   addCategoricalOption(): void {
@@ -1100,308 +1115,177 @@ moveIntervalDown(index: number): void {
     });
   }
 
-  private saveIntervalConfiguration(
-    rule: CriterionNumericalRule,
-    criterion: Criterion
-  ): void {
-    if (rule.numericType !== NumericType.Interval) {
-      this.intervalRanges =
-        this.intervalRanges.filter(
-          range =>
-            range.criterionNumericalRuleId !==
-            rule.id
-        );
-
-      this.finishCriterionConfiguration(
-        criterion
+ private saveIntervalConfiguration(
+  rule: CriterionNumericalRule,
+  criterion: Criterion
+): void {
+  if (rule.numericType !== NumericType.Interval) {
+    this.intervalRanges =
+      this.intervalRanges.filter(
+        range =>
+          range.criterionNumericalRuleId !== rule.id
       );
 
-      return;
-    }
+    this.finishCriterionConfiguration(
+      criterion
+    );
 
-    this.intervalRangeService
-      .getRangesByRule(rule.id)
-      .subscribe({
-        next: (storedRanges) => {
-          const currentRanges =
-            this.newIntervalRanges;
-
-          const currentIds = new Set(
-            currentRanges
-              .filter(range => range.id > 0)
-              .map(range => range.id)
-          );
-
-          const deletedRanges =
-            storedRanges.filter(
-              range => !currentIds.has(range.id)
-            );
-
-          this.deleteIntervalRanges(
-            deletedRanges,
-            () =>
-              this.saveCurrentIntervalRanges(
-                rule,
-                criterion
-              )
-          );
-        },
-
-        error: (error) => {
-          console.error(
-            'Failed to load interval ranges',
-            error
-          );
-
-          this.showError(
-            'Unable to update the interval ranges. Please try again.');
-
-          this.isSaving = false;
-          this.changeDetector.markForCheck();
-        }
-      });
+    return;
   }
 
-  private deleteIntervalRanges(
-    ranges: IntervalRange[],
-    onComplete: () => void
-  ): void {
-    if (ranges.length === 0) {
-      onComplete();
-      return;
-    }
+  const ranges = this.newIntervalRanges.map(
+    range => ({
+      id: range.id,
+      minValue: range.minValue,
+      maxValue: range.maxValue,
+      rank: range.rank
+    })
+  );
 
-    let remaining = ranges.length;
-    let failed = false;
+  this.intervalRangeService
+    .updateRanges(
+      rule.id,
+      {
+        ranges
+      }
+    )
+    .subscribe({
+      next: () => {
+        this.intervalRangeService
+          .getRangesByRule(rule.id)
+          .subscribe({
+            next: storedRanges => {
+              this.intervalRanges =
+                this.intervalRanges.filter(
+                  range =>
+                    range.criterionNumericalRuleId !==
+                    rule.id
+                );
 
-    for (const range of ranges) {
-      this.intervalRangeService
-        .deleteRange(range.id)
-        .subscribe({
-          next: () => {
-            remaining--;
+              this.intervalRanges = [
+                ...this.intervalRanges,
+                ...storedRanges
+              ];
 
-            if (
-              remaining === 0 &&
-              !failed
-            ) {
-              onComplete();
-            }
-          },
+              this.newIntervalRanges =
+                storedRanges.map(
+                  range => ({ ...range })
+                );
 
-          error: (error) => {
-            console.error(
-              'Failed to delete interval range',
-              error
-            );
+              this.finishCriterionConfiguration(
+                criterion
+              );
+            },
 
-            if (!failed) {
-              failed = true;
+            error: error => {
+              console.error(
+                'Failed to reload interval ranges',
+                error
+              );
 
               this.showError(
-                'Unable to update the interval ranges. Please try again.');
+                'The interval ranges were saved, but could not be reloaded. Please refresh the page.'
+              );
 
               this.isSaving = false;
               this.changeDetector.markForCheck();
             }
-          }
-        });
-    }
-  }
-
-  private saveCurrentIntervalRanges(
-    rule: CriterionNumericalRule,
-    criterion: Criterion
-  ): void {
-    const allRanges = [...this.newIntervalRanges];
-
-    const existingRanges =
-      allRanges.filter(
-        range => range.id > 0
-      );
-
-    const newRanges =
-      allRanges.filter(
-        range => range.id === 0
-      );
-
-    if (newRanges.length > 0) {
-      this.intervalRangeService
-        .createRanges({
-          criterionNumericalRuleId: rule.id,
-          ranges: newRanges.map(
-            (range, index) => ({
-              minValue: range.minValue,
-              maxValue: range.maxValue,
-              rank: index + 1
-            })
-          )
-        })
-        .subscribe({
-          next: (createdRanges) => {
-            this.intervalRanges =
-              this.intervalRanges.filter(
-                range =>
-                  range.criterionNumericalRuleId !==
-                  rule.id
-              );
-
-            this.intervalRanges = [
-              ...this.intervalRanges,
-              ...existingRanges,
-              ...createdRanges
-            ];
-
-            this.finishCriterionConfiguration(
-              criterion
-            );
-          },
-
-          error: (error) => {
-            console.error(
-              'Failed to create interval ranges',
-              error
-            );
-
-            this.showError(
-              'Unable to save the interval ranges. Please try again.');
-
-            this.isSaving = false;
-            this.changeDetector.markForCheck();
-          }
-        });
-
-      return;
-    }
-
-    this.intervalRangeService.updateRanges(
-      rule.id,
-      {
-         ranges: existingRanges.map(
-          (range, index) => ({
-            id: range.id,
-            minValue: range.minValue,
-            maxValue: range.maxValue,
-            rank: index + 1
-          })
-        )
-      }
-    ).subscribe({
-      next: () => {
-        this.intervalRanges =
-          this.intervalRanges.filter(
-            range =>
-              range.criterionNumericalRuleId !==
-              rule.id
-          );
-
-        this.intervalRanges = [
-          ...this.intervalRanges,
-          ...existingRanges
-        ];
-
-        this.finishCriterionConfiguration(
-          criterion
-        );
+          });
       },
 
-      error: (error) => {
+      error: error => {
         console.error(
           'Failed to update interval ranges',
           error
         );
 
         this.showError(
-          'Unable to update the interval ranges. Please try again.');
-
-        this.isSaving = false;
-        this.changeDetector.markForCheck();
-      }
-    });
-  }
-
-  private updateCategoricalConfiguration(
-    criterion: Criterion
-  ): void {
-    const existingOptions =
-      this.getCategoricalOptions(
-        criterion.id
-      );
-
-    if (existingOptions.length === 0) {
-      this.showError(
-        'This criterion has no categorical options configured.');
-      this.isSaving = false;
-      this.changeDetector.markForCheck();
-      return;
-    }
-
-    const requestOptions =
-      this.newCategoricalOptions
-        .filter(option => option.id > 0)
-        .map(option => ({
-          id: option.id,
-          value: option.value.trim()
-        }));
-
-    if (
-      requestOptions.length !==
-      existingOptions.length
-    ) {
-      this.showError(
-        'Please keep all existing categorical options when configuring this criterion.');
-      this.isSaving = false;
-      this.changeDetector.markForCheck();
-      return;
-    }
-
-    this.optionService.updateOptions(
-      criterion.id,
-      {
-        options: requestOptions
-      }
-    ).subscribe({
-      next: () => {
-        const updatedOptions =
-          this.newCategoricalOptions.map(
-            (option, index) => ({
-              ...option,
-              value: option.value.trim(),
-              rank: index + 1
-            })
-          );
-
-        this.categoricalOptions =
-          this.categoricalOptions
-            .filter(
-              option =>
-                option.criterionId !== criterion.id
-            )
-            .concat(updatedOptions);
-
-        this.finishCriterionConfiguration(
-          criterion
-        );
-      },
-
-      error: (error) => {
-        console.error(
-          'Failed to update categorical options',
-          error
-        );
-
-        this.showError(
           this.getApiError(
             error,
-            'Unable to update categorical options. Please try again.'
-          ));
+            'Unable to save the interval ranges. Please try again.'
+          )
+        );
 
         this.isSaving = false;
         this.changeDetector.markForCheck();
       }
     });
+}
+
+
+  private updateCategoricalConfiguration(
+  criterion: Criterion
+): void {
+  const options = this.newCategoricalOptions.map(option => ({
+    id: option.id,
+    value: option.value.trim()
+  }));
+
+  if (options.length < 2) {
+    this.showError(
+      'Please add at least two categorical options.'
+    );
+    this.isSaving = false;
+    this.changeDetector.markForCheck();
+    return;
   }
 
+  if (options.some(option => !option.value)) {
+    this.showError(
+      'All categorical options must have a value.'
+    );
+    this.isSaving = false;
+    this.changeDetector.markForCheck();
+    return;
+  }
+
+  this.optionService.updateOptions(
+    criterion.id,
+    {
+      options
+    }
+  ).subscribe({
+    next: () => {
+      const updatedOptions =
+        this.newCategoricalOptions.map(
+          (option, index) => ({
+            ...option,
+            value: option.value.trim(),
+            rank: index + 1
+          })
+        );
+
+      this.categoricalOptions =
+        this.categoricalOptions
+          .filter(
+            option =>
+              option.criterionId !== criterion.id
+          )
+          .concat(updatedOptions);
+
+      this.finishCriterionConfiguration(
+        criterion
+      );
+    },
+
+    error: error => {
+      console.error(
+        'Failed to update categorical options',
+        error
+      );
+
+      this.showError(
+        this.getApiError(
+          error,
+          'Unable to update categorical options. Please try again.'
+        )
+      );
+
+      this.isSaving = false;
+      this.changeDetector.markForCheck();
+    }
+  });
+}
   private finishNewCriterion(
     criterion: Criterion
   ): void {
@@ -1529,61 +1413,95 @@ moveIntervalDown(index: number): void {
     }
 
     if (
-      formValue.numericType ===
-      NumericType.Interval
+  formValue.numericType ===
+  NumericType.Interval
+) {
+  if (this.newIntervalRanges.length < 2) {
+    this.showError(
+      'Please configure at least two interval ranges.'
+    );
+    return false;
+  }
+
+  const sortedRanges = [
+    ...this.newIntervalRanges
+  ].sort(
+    (a, b) => a.minValue - b.minValue
+  );
+
+  for (const range of sortedRanges) {
+    if (
+      !Number.isFinite(range.minValue) ||
+      !Number.isFinite(range.maxValue)
     ) {
-      if (this.newIntervalRanges.length < 2) {
-        this.showError(
-          'Please configure at least two interval ranges.');
-        return false;
-      }
-
-      for (const range of this.newIntervalRanges) {
-        if (
-          range.minValue >= range.maxValue
-        ) {
-          this.showError(
-            'Each interval must have a minimum value smaller than its maximum value.');
-          return false;
-        }
-
-        if (
-          range.minValue < minValue ||
-          range.maxValue > maxValue
-        ) {
-          this.showError(
-            'Interval ranges must be inside the minimum and maximum values.');
-          return false;
-        }
-      }
-
-      const sortedRanges = [
-        ...this.newIntervalRanges
-      ].sort(
-        (a, b) => a.minValue - b.minValue
+      this.showError(
+        'All interval boundaries must be valid numbers.'
       );
-
-      for (
-        let i = 1;
-        i < sortedRanges.length;
-        i++
-      ) {
-        const previous = sortedRanges[i - 1];
-        const current = sortedRanges[i];
-
-        if (current.minValue < previous.maxValue) {
-          this.showError(
-            'Interval ranges must not overlap.');
-          return false;
-        }
-
-        if (current.minValue > previous.maxValue) {
-          this.showError(
-            'Interval ranges must cover the complete numerical rule range without gaps.');
-          return false;
-        }
-      }
+      return false;
     }
+
+    if (range.minValue >= range.maxValue) {
+      this.showError(
+        'Each interval must have a minimum value smaller than its maximum value.'
+      );
+      return false;
+    }
+
+    if (
+      range.minValue < minValue ||
+      range.maxValue > maxValue
+    ) {
+      this.showError(
+        'Interval ranges must be inside the minimum and maximum values.'
+      );
+      return false;
+    }
+  }
+
+  if (sortedRanges[0].minValue !== minValue) {
+    this.showError(
+      `The first interval must start at ${minValue}.`
+    );
+    return false;
+  }
+
+  for (
+    let i = 1;
+    i < sortedRanges.length;
+    i++
+  ) {
+    const previous = sortedRanges[i - 1];
+    const current = sortedRanges[i];
+
+    if (
+      current.minValue < previous.maxValue
+    ) {
+      this.showError(
+        'Interval ranges must not overlap.'
+      );
+      return false;
+    }
+
+    if (
+      current.minValue > previous.maxValue
+    ) {
+      this.showError(
+        'Interval ranges must cover the complete numerical rule range without gaps.'
+      );
+      return false;
+    }
+  }
+
+  const lastRange =
+    sortedRanges[sortedRanges.length - 1];
+
+  if (lastRange.maxValue !== maxValue) {
+    this.showError(
+      `The last interval must end at ${maxValue}.`
+    );
+    return false;
+  }
+}
 
     return true;
   }

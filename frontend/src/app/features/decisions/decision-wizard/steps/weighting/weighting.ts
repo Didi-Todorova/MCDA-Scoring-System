@@ -277,7 +277,7 @@ export class WeightingComponent implements OnInit {
 
   private savePercentageAllocation(): void {
     if (this.totalPercentage !== 100) {
-      this.showError('Weights must total 100%. Current total: ${this.totalPercentage}%.');
+      this.showError(`Weights must total 100%. Current total: ${this.totalPercentage}%.`);
       return;
     }
 

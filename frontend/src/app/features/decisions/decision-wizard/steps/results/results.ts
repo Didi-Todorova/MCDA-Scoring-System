@@ -10,6 +10,7 @@ import { CommonModule } from '@angular/common';
 
 import {
   ActivatedRoute,
+  Router,
   RouterLink
 } from '@angular/router';
 
@@ -35,11 +36,16 @@ export class ResultsComponent implements OnInit, OnDestroy {
   private readonly route =
     inject(ActivatedRoute);
 
+    private readonly router = inject(Router);
+
   private readonly decisionService =
     inject(DecisionService);
 
   private readonly changeDetector =
     inject(ChangeDetectorRef);
+
+    readonly openedFromDecisionList =
+  this.route.snapshot.queryParamMap.get('fromDecisionList') === 'true';
 
   private errorTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -169,5 +175,36 @@ export class ResultsComponent implements OnInit, OnDestroy {
         (score / maxScore) * 100
       )
     );
+  }
+
+  back(): void {
+    if (!this.decisionId) {
+      return;
+    }
+
+    if (this.openedFromDecisionList) {
+      this.router.navigate(
+        [
+          '/decisions',
+          this.decisionId,
+          'wizard',
+          'preview'
+        ],
+        {
+          queryParams: {
+            fromDecisionList: 'true'
+          }
+        }
+      );
+
+      return;
+    }
+
+    this.router.navigate([
+      '/decisions',
+      this.decisionId,
+      'wizard',
+      'preview'
+    ]);
   }
 }

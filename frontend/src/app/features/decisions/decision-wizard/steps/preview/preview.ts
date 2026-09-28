@@ -340,7 +340,17 @@ private readonly router = inject(Router);
     }
 
     this.router.navigate(
-      ['/decisions', this.decisionId, 'results']
+      [
+        '/decisions',
+        this.decisionId,
+        'wizard',
+        'results'
+      ],
+      {
+        queryParams: {
+          fromDecisionList: this.openedFromDecisionList
+        }
+      }
     );
   }
 

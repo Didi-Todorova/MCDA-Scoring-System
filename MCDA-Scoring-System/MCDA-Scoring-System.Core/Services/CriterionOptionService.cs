@@ -231,74 +231,112 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
             var criterion = await _repo.GetByIdAsync<Criterion>(criterionId);
 
             if (criterion == null)
+            {
                 throw new KeyNotFoundException(
                     $"Criterion with ID {criterionId} not found.");
+            }
 
             ValidateCriterionType(criterion);
 
-            var options = await _repo.All<CriterionOption>()
-                .Where(co => co.CriterionId == criterionId)
-                .ToListAsync();
-
-            if (options.Count == 0)
-                throw new KeyNotFoundException(
-                    $"No criterion options found for criterion {criterionId}.");
-
-            if (dto.Options == null ||
-                dto.Options.Count != options.Count)
+            if (dto.Options == null || dto.Options.Count < 2)
             {
                 throw new ArgumentException(
-                    "All criterion options must be provided.");
+                    "At least two criterion options are required.");
             }
 
             ValidateUpdateOptions(dto.Options);
 
-            var existingIds = options
+            var existingOptions = await _repo.All<CriterionOption>()
+                .Where(co => co.CriterionId == criterionId)
+                .ToListAsync();
+
+            var existingById = existingOptions
+                .ToDictionary(o => o.Id);
+
+            var submittedExistingIds = dto.Options
+                .Where(o => o.Id > 0)
                 .Select(o => o.Id)
                 .ToHashSet();
 
-            var submittedIds = dto.Options
-                .Select(o => o.Id)
-                .ToHashSet();
+            var optionsToDelete = existingOptions
+                .Where(o => !submittedExistingIds.Contains(o.Id))
+                .ToList();
 
-            if (!existingIds.SetEquals(submittedIds))
-                throw new ArgumentException(
-                    "The submitted options do not match the criterion options.");
+            foreach (var option in optionsToDelete)
+            {
+                var isUsed = await _repo
+                    .AllReadonly<AlternativeValue>()
+                    .AnyAsync(av =>
+                        av.CriterionOptionId == option.Id);
 
-            var optionsById = options.ToDictionary(o => o.Id);
+                if (isUsed)
+                {
+                    throw new ArgumentException(
+                        $"Criterion option '{option.Value}' is currently used by an alternative and cannot be removed.");
+                }
+            }
+     
+            var newOptions = new List<CriterionOption>();
 
             for (int i = 0; i < dto.Options.Count; i++)
             {
                 var input = dto.Options[i];
-                var option = optionsById[input.Id];
+                var value = input.Value.Trim();
+                var rank = i + 1;
 
-                var valueChanged = !string.Equals(
-                    option.Value.Trim(),
-                    input.Value.Trim(),
-                    StringComparison.OrdinalIgnoreCase);
-
-                if (valueChanged)
+                if (input.Id > 0)
                 {
-                    var isUsed = await _repo
-                        .AllReadonly<AlternativeValue>()
-                        .AnyAsync(av =>
-                            av.CriterionOptionId == option.Id);
-
-                    if (isUsed)
+                    if (!existingById.TryGetValue(input.Id, out var option))
                     {
                         throw new ArgumentException(
-                            $"Criterion option '{option.Value}' is already used by an alternative and cannot be renamed.");
+                            $"Criterion option with ID {input.Id} does not belong to criterion {criterionId}.");
                     }
+
+                    var valueChanged = !string.Equals(
+                        option.Value.Trim(),
+                        value,
+                        StringComparison.OrdinalIgnoreCase);
+
+                    if (valueChanged)
+                    {
+                        var isUsed = await _repo
+                            .AllReadonly<AlternativeValue>()
+                            .AnyAsync(av =>
+                                av.CriterionOptionId == option.Id);
+
+                        if (isUsed)
+                        {
+                            throw new ArgumentException(
+                                $"Criterion option '{option.Value}' is already used by an alternative and cannot be renamed.");
+                        }
+                    }
+
+                    option.Value = value;
+                    option.Rank = rank;
+                }
+                else
+                {
+                    var newOption = new CriterionOption
+                    {
+                        CriterionId = criterionId,
+                        Value = value,
+                        Rank = rank
+                    };
+
+                    newOptions.Add(newOption);
                 }
             }
 
-            for (int i = 0; i < dto.Options.Count; i++)
+           
+            foreach (var option in optionsToDelete)
             {
-                var input = dto.Options[i];
-                var option = optionsById[input.Id];
+                _repo.Delete(option);
+            }
 
-                option.Value = input.Value.Trim();
-                option.Rank = i + 1;
+          
+            if (newOptions.Count > 0)
+            {
+                await _repo.AddRangeAsync(newOptions);
             }
 
             await _repo.SaveChangesAsync();
@@ -364,6 +402,8 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services
                 throw new ArgumentException(
                     "Criterion option value cannot exceed 200 characters.");
             }
+
+
         }
     }
 }

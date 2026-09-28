@@ -128,7 +128,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                 NumericType.Interval =>
                     CalculateRatingInterval(
                         rawValue,
-                        rule.IntervalRanges),
+                        rule.IntervalRanges,
+                        rule.MinValue,
+                        rule.MaxValue),
 
                 NumericType.TargetValue =>
                     CalculateRatingTargetValue(
@@ -187,7 +189,9 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
         private decimal CalculateRatingInterval(
     decimal rawValue,
-    ICollection<IntervalRange>? intervalRanges)
+    ICollection<IntervalRange>? intervalRanges,
+    decimal ruleMinValue,
+    decimal ruleMaxValue)
         {
             if (intervalRanges == null)
             {
@@ -195,9 +199,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                     "Interval rating has no configured ranges.");
             }
 
-            var ranges = intervalRanges
-                .OrderBy(r => r.Rank)
-                .ToList();
+            var ranges = intervalRanges.ToList();
 
             if (ranges.Count < 2)
             {
@@ -205,15 +207,23 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
                     "At least two interval ranges are required.");
             }
 
-            ValidateIntervalRanges(ranges);
+            ValidateIntervalRanges(
+                ranges,
+                ruleMinValue,
+                ruleMaxValue);
 
-            var selectedRangeIndex = -1;
+            var orderedByValue = ranges
+                .OrderBy(r => r.MinValue)
+                .ToList();
 
-            for (int i = 0; i < ranges.Count; i++)
+            IntervalRange? selectedRange = null;
+
+            for (int i = 0; i < orderedByValue.Count; i++)
             {
-                var range = ranges[i];
+                var range = orderedByValue[i];
 
-                bool isLastRange = i == ranges.Count - 1;
+                bool isLastRange =
+                    i == orderedByValue.Count - 1;
 
                 bool belongsToRange = isLastRange
                     ? rawValue >= range.MinValue &&
@@ -223,12 +233,12 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
                 if (belongsToRange)
                 {
-                    selectedRangeIndex = i;
+                    selectedRange = range;
                     break;
                 }
             }
 
-            if (selectedRangeIndex == -1)
+            if (selectedRange == null)
             {
                 throw new ArgumentException(
                     $"Value {rawValue} does not belong to any interval range.");
@@ -236,7 +246,7 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
 
             decimal rating =
                 5m -
-                (selectedRangeIndex * 4m /
+                ((selectedRange.Rank - 1) * 4m /
                 (ranges.Count - 1));
 
             return Math.Round(
@@ -429,35 +439,80 @@ namespace MCDA_Scoring_System.MCDA_Scoring_System.Core.Services.RatingRuleServic
         }
 
         private static void ValidateIntervalRanges(
-     List<IntervalRange> ranges)
+            List<IntervalRange> ranges,
+            decimal ruleMinValue,
+            decimal ruleMaxValue)
         {
-            var expectedRank = 1;
-
-            foreach (var range in ranges)
+            if (ranges.Count < 2)
             {
-                if (range.Rank != expectedRank)
-                {
-                    throw new InvalidOperationException(
-                        "Interval range ranks must be consecutive starting from 1.");
-                }
+                throw new InvalidOperationException(
+                    "At least two interval ranges are required.");
+            }
 
+            var expectedRanks = Enumerable
+                .Range(1, ranges.Count)
+                .ToHashSet();
+
+            var actualRanks = ranges
+                .Select(r => r.Rank)
+                .ToHashSet();
+
+            if (!actualRanks.SetEquals(expectedRanks))
+            {
+                throw new InvalidOperationException(
+                    "Interval range ranks must contain each rank exactly once.");
+            }
+
+            var orderedByValue = ranges
+                .OrderBy(r => r.MinValue)
+                .ToList();
+
+            foreach (var range in orderedByValue)
+            {
                 if (range.MinValue >= range.MaxValue)
                 {
                     throw new ArgumentException(
                         "Each interval range must have a minimum value smaller than its maximum value.");
                 }
 
-                expectedRank++;
-            }
-
-            for (int i = 1; i < ranges.Count; i++)
-            {
-                if (ranges[i].MinValue <
-                    ranges[i - 1].MaxValue)
+                if (range.MinValue < ruleMinValue ||
+                    range.MaxValue > ruleMaxValue)
                 {
                     throw new ArgumentException(
-                        "Interval ranges must not overlap.");
+                        "Interval ranges must stay within the numerical rule range.");
                 }
+            }
+
+            if (orderedByValue[0].MinValue != ruleMinValue)
+            {
+                throw new ArgumentException(
+                    $"Interval ranges must start at {ruleMinValue}.");
+            }
+
+            for (int i = 1; i < orderedByValue.Count; i++)
+            {
+                var previous = orderedByValue[i - 1];
+                var current = orderedByValue[i];
+
+                if (current.MinValue < previous.MaxValue)
+                {
+                    throw new ArgumentException(
+                        $"Interval ranges overlap: " +
+                        $"{previous.MinValue}-{previous.MaxValue} " +
+                        $"and {current.MinValue}-{current.MaxValue}.");
+                }
+
+                if (current.MinValue > previous.MaxValue)
+                {
+                    throw new ArgumentException(
+                        "Interval ranges must cover the complete numerical rule range without gaps.");
+                }
+            }
+
+            if (orderedByValue[^1].MaxValue != ruleMaxValue)
+            {
+                throw new ArgumentException(
+                    $"Interval ranges must end at {ruleMaxValue}.");
             }
         }
 
